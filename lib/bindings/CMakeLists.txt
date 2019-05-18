@@ -1,0 +1,5 @@
+if (PWN_BINDINGS)
+    if (PWN_BINDINGS_PYBIND11)
+        add_subdirectory(pybind11)
+    endif()
+endif()
