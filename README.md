@@ -19,56 +19,55 @@ You can also create [trainers](./trainer.cc). Even with Python.
 
 ## Features
 
-- [x] Linux
-  - [x] Process' handler
-    - [x] Read and write any value
-    - [x] Value scanner
-    - [ ] Pattern scanner
-    - [x] Pointer scanner
-      - [x] Forward ~~> (support scanning for multiple addresses)
-      - [x] Backward (like Cheat Engine)
-    - [ ] Breakpoints and Watchpoints
-    - [ ] Code injection
-    - [x] Handlers
-      - [x] procfs
-        - [ ] opensource rootkit (to track regions)
-      - [ ] criu
-  - [ ] Tools
-  - [ ] CLI support
-  - [ ] GUI support
-  - [ ] Python binding (pybind11)
-  - [ ] MPI support
+- [x] Process' handler
+  - [x] Read and write any value
+  - [x] Value scanner
+  - [ ] Pattern scanner
+  - [x] Pointer scanner
+    - [x] Forward ~~> (support scanning for multiple addresses)
+    - [x] Backward (like Cheat Engine)
+  - [ ] Breakpoints and Watchpoints
+  - [ ] Code injection
+  - [x] Handlers
+    - [x] [procfs (Linux)](http://man7.org/linux/man-pages/man5/proc.5.html)
+      - [ ] rootkit (to track regions inheritance)
+    - [ ] [CRIU](https://criu.org/Main_Page) 
+- [ ] Tools
+- [ ] CLI support
+- [ ] GUI support
+- [ ] Python binding (pybind11)
+- [ ] MPI support
 
 ## Support
 
 ### Arch support
-But who uses 32 bit machine?
 
-- [x] 64 bit -> 64 bit targets
-- [ ] 64 bit -> 32 bit targets
-- [ ] 32 bit -> 64 bit targets
-- [ ] 32 bit -> 32 bit targets
+- [x] 64 bit host -> 64 bit targets
+- [ ] 64 bit host -> 32 bit targets
+- [ ] 32 bit host -> 64 bit targets
+- [ ] 32 bit host -> 32 bit targets
 
 ### OS support
 
-- [x] linux
-- [ ] mac
-- [ ] windows
+- [x] Linux
+- [ ] macOS
+- [ ] Windows 10
 
 ### Compiler support
 
-- [x] gcc
-- [ ] clang
-- [ ] intel
-- [ ] msvc
+- [x] GNU Compiler Collection
+- [ ] LLVM Clang
+- [ ] Intel C++ Compiler
+- [ ] Microsoft Visual C++
 
 ## Cheat example
 *Further information:* [Advanced C++ example of CS:GO trainer](./example/csgo_linux64/fix_resources_download/main.cc) 
 ### Example is a bit out of date, you can check [our testing suites](./pwner/test). It is also have example of python executable
 ```cpp
-handler h("csgo_linux64");
+using namespace PWNER::PROCESS;
+ProcessPID h("csgo_linux64");
 h.update_regions();
-region *client = h.get_region_by_name("client_client.so");
+Region *client = h.get_region("client_client.so");
 uintptr_t glow_pointer_call;
 h.find_pattern(&glow_pointer_call,
                client,
@@ -80,8 +79,20 @@ h.read(&glow_array_offset, glow_call+0x10, sizeof(uintptr_t));
 // etc...
 ```
 
+## Contributing
+
+### Download
+
+### Build
+enum options
+build cmake ..
+
+### Test
+blocked: CTest behaviour not implemented
+
+### Packaging
+
+
 ## Contacts
 
 - Ivan Stepanov ivanstepanovftw@gmail.com
-- Andrea Stacchiotti andreastacchiotti@gmail.com 
-
