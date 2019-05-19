@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 from PyQt5.QtWidgets import QMainWindow, QApplication, QDialog, QWidget, QDockWidget
-from widgets.Ui_Dashboard import Ui_Dashboard
+from widgets.Ui_PointerScanner import Ui_PointerScanner
 
 
-class Dashboard(QDockWidget, Ui_Dashboard):
+class PointerScanner(QDockWidget, Ui_PointerScanner):
     def __init__(self, parent=None):
-        super(Dashboard, self).__init__(parent)
+        super(PointerScanner, self).__init__(parent)
 
         # Set up the user interface from Designer.
         self.setupUi(self)
