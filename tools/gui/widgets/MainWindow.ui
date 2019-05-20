@@ -62,7 +62,7 @@
     <property name="title">
      <string>Settings</string>
     </property>
-    <addaction name="actionResetLayout"/>
+    <addaction name="actionReset"/>
     <addaction name="separator"/>
     <addaction name="actionPreferences"/>
    </widget>
@@ -96,7 +96,7 @@
     <string>pwner help</string>
    </property>
   </action>
-  <action name="actionResetLayout">
+  <action name="actionReset">
    <property name="text">
     <string>Reset layout</string>
    </property>
@@ -160,8 +160,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
+     <x>20</x>
+     <y>20</y>
     </hint>
    </hints>
   </connection>
@@ -176,8 +176,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
+     <x>20</x>
+     <y>20</y>
     </hint>
    </hints>
   </connection>
@@ -192,8 +192,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
+     <x>20</x>
+     <y>20</y>
     </hint>
    </hints>
   </connection>
@@ -208,8 +208,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
+     <x>20</x>
+     <y>20</y>
     </hint>
    </hints>
   </connection>
@@ -224,8 +224,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
+     <x>20</x>
+     <y>20</y>
     </hint>
    </hints>
   </connection>
@@ -240,8 +240,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
+     <x>20</x>
+     <y>20</y>
     </hint>
    </hints>
   </connection>
@@ -256,8 +256,8 @@
      <y>-1</y>
     </hint>
     <hint type="destinationlabel">
-     <x>399</x>
-     <y>299</y>
+     <x>20</x>
+     <y>20</y>
     </hint>
    </hints>
   </connection>
