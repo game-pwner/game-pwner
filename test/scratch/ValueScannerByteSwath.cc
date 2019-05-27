@@ -24,7 +24,7 @@ int main(int argc, const char *argv[]) {
     // PWNER::Edata_type data_type = PWNER::Edata_type::ANYNUMBER;
     PWNER::Edata_type data_type = PWNER::Edata_type::INTEGER64;
 
-    PWNER::PROCESS::ProcessProcfs handler((std::regex(target)));
+    PWNER::PROCESS::ProcessProcfs handler(target);
     if (!handler)
         throw std::invalid_argument("Cannot find "+target+" process. Nothing to do.");
 

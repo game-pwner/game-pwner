@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from PyQt5 import QtWidgets
 from PyQt5.QtWidgets import QTableWidgetItem, QMessageBox
 from PyQt5.QtGui import QPen, QImage
@@ -6,10 +8,13 @@ import sys
 # IDE: JetBrains CLion: mark ./tools/gui folder as Source Root
 from widgets.MainWindow import MainWindow
 
+import settings
+settings.init()
+
 
 def main() -> int:
     app = QtWidgets.QApplication(sys.argv)
-    w = MainWindow()
+    w = MainWindow(parent=None)
     w.show()
     return app.exec_()
 

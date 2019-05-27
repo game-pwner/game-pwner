@@ -18,7 +18,7 @@ public:
         update_regions();
     }
 
-    explicit IOProcfs(const std::regex &regex_pattern_cmdline)
+    explicit IOProcfs(const std::string &regex_pattern_cmdline)
     : m_pid(from_cmdline(regex_pattern_cmdline)) {
         update_regions();
     }
@@ -38,7 +38,8 @@ public:
         return ss.str();
     }
 
-    static pid_t from_cmdline(const std::regex &pattern_cmdline) {
+    static pid_t from_cmdline(const std::string &pattern_cmdline) {
+        const std::regex pattern(pattern_cmdline);
         for(auto& p: sfs::directory_iterator("/proc")) {
             if (p.path().filename().string().find_first_not_of("0123456789") != std::string::npos)
                 /* if filename is not numeric */
@@ -57,7 +58,7 @@ public:
             std::string m_cmdline = cmdline(pid);
 
             std::smatch match;
-            if (std::regex_search(m_cmdline, match, pattern_cmdline)) {
+            if (std::regex_search(m_cmdline, match, pattern)) {
                 return pid;
             }
         }
