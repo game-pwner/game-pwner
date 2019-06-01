@@ -38,10 +38,10 @@ int main(int argc, const char *argv[]) {
         <<endl;
 
 
-    PWNER::Cuservalue uservalue[2];
+    std::vector<PWNER::Cuservalue> uservalue;
     PWNER::Ematch_type match_type;
     try {
-        PWNER::string_to_uservalue(data_type, search_for, &match_type, uservalue);
+        PWNER::string_to_uservalue(data_type, search_for, match_type, uservalue);
     } catch (PWNER::bad_uservalue_cast &e) {
         clog<<e.what()<<endl;
         return 0;
@@ -49,7 +49,7 @@ int main(int argc, const char *argv[]) {
 
     PWNER::ByteMatches matches_first;
     timestamp = high_resolution_clock::now();
-    scanner.scan_regions(matches_first, data_type, uservalue, match_type);
+    scanner.scan_regions(matches_first, data_type, uservalue.data(), match_type);
     clog<<"Scan 1/3 done in: "<<duration_cast<duration<double>>(high_resolution_clock::now() - timestamp).count()<<" seconds"<<endl;
     clog<<"mem_virt: "<<matches_first.mem_virt()<<endl;
     clog<<"mem_disk: "<<matches_first.mem_disk()<<endl;
@@ -76,7 +76,7 @@ int main(int argc, const char *argv[]) {
     PWNER::ByteMatches matches_prev = matches_first;
     timestamp = high_resolution_clock::now();
     scanner.scan_update(matches_prev);
-    scanner.scan_recheck(matches_prev, data_type, uservalue, match_type);
+    scanner.scan_recheck(matches_prev, data_type, uservalue.data(), match_type);
     clog<<"Scan 2/3 done in: "<<duration_cast<duration<double>>(high_resolution_clock::now() - timestamp).count()<<" seconds"<<endl;
     clog<<"mem_virt: "<<matches_prev.mem_virt()<<endl;
     clog<<"mem_allo: "<<matches_prev.mem_allo()<<endl;
@@ -97,7 +97,7 @@ int main(int argc, const char *argv[]) {
 
     PWNER::ByteMatches matches_curr = matches_prev;
     scanner_mmap.scan_update(matches_curr);
-    scanner_mmap.scan_recheck(matches_curr, data_type, uservalue, match_type);
+    scanner_mmap.scan_recheck(matches_curr, data_type, uservalue.data(), match_type);
     clog<<"Scan 3/3 done in: "<<duration_cast<duration<double>>(high_resolution_clock::now() - timestamp).count()<<" seconds"<<endl;
     clog<<"mem_virt: "<<matches_curr.mem_virt()<<endl;
     clog<<"mem_allo: "<<matches_curr.mem_allo()<<endl;

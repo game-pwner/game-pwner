@@ -187,7 +187,7 @@
           <item>
            <widget class="QLabel" name="lblStep">
             <property name="text">
-             <string>Step:</string>
+             <string>Alignment:</string>
             </property>
            </widget>
           </item>
@@ -237,7 +237,7 @@
  <connections>
   <connection>
    <sender>btnRegions</sender>
-   <signal>triggered(bool)</signal>
+   <signal>clicked()</signal>
    <receiver>ValueScanner</receiver>
    <slot>onActionRegions()</slot>
    <hints>
@@ -253,7 +253,7 @@
   </connection>
   <connection>
    <sender>btnReset</sender>
-   <signal>triggered(bool)</signal>
+   <signal>clicked()</signal>
    <receiver>ValueScanner</receiver>
    <slot>onActionReset()</slot>
    <hints>
@@ -269,7 +269,7 @@
   </connection>
   <connection>
    <sender>btnScan</sender>
-   <signal>triggered(bool)</signal>
+   <signal>clicked()</signal>
    <receiver>ValueScanner</receiver>
    <slot>onActionScan()</slot>
    <hints>
@@ -284,10 +284,10 @@
    </hints>
   </connection>
   <connection>
-   <sender></sender>
-   <signal>triggered(bool)</signal>
+   <sender>lineValue</sender>
+   <signal>textChanged(QString)</signal>
    <receiver>ValueScanner</receiver>
-   <slot>onActionScan()</slot>
+   <slot>onUservalueChange()</slot>
    <hints>
     <hint type="sourcelabel">
      <x>-1</x>
@@ -304,5 +304,6 @@
   <slot>onActionRegions()</slot>
   <slot>onActionReset()</slot>
   <slot>onActionScan()</slot>
+  <slot>onUservalueChange()</slot>
  </slots>
 </ui>

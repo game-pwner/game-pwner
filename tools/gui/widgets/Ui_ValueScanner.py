@@ -107,6 +107,10 @@ class Ui_ValueScanner(object):
 
         self.retranslateUi(ValueScanner)
         self.comboValueType.setCurrentIndex(2)
+        self.btnRegions.clicked.connect(ValueScanner.onActionRegions)
+        self.btnReset.clicked.connect(ValueScanner.onActionReset)
+        self.btnScan.clicked.connect(ValueScanner.onActionScan)
+        self.lineValue.textChanged['QString'].connect(ValueScanner.onUservalueChange)
         QtCore.QMetaObject.connectSlotsByName(ValueScanner)
 
     def retranslateUi(self, ValueScanner):
@@ -124,7 +128,7 @@ class Ui_ValueScanner(object):
         self.comboValueType.setItemText(0, _translate("ValueScanner", "bytearray"))
         self.comboValueType.setItemText(1, _translate("ValueScanner", "string"))
         self.comboValueType.setItemText(2, _translate("ValueScanner", "number"))
-        self.lblStep.setText(_translate("ValueScanner", "Step:"))
+        self.lblStep.setText(_translate("ValueScanner", "Alignment:"))
         self.btnRegions.setText(_translate("ValueScanner", "Regions to scan..."))
 
 

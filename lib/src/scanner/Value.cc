@@ -30,11 +30,12 @@
 void
 PWNER::string_to_uservalue(const PWNER::Edata_type &data_type,
                            const std::string &text,
-                           PWNER::Ematch_type *match_type,
-                           PWNER::Cuservalue *uservalue)
+                           PWNER::Ematch_type &match_type,
+                           std::vector<PWNER::Cuservalue>& uservalue)
 {
     //todo[medium] remove GOTO!!!!!!!!
     using namespace std;
+    uservalue.resize(2);
 
     if (text.empty())
         throw bad_uservalue_cast(text,0);
@@ -83,7 +84,7 @@ PWNER::string_to_uservalue(const PWNER::Edata_type &data_type,
                 cursor += MASK.size();
                 if (cursor != pattern.size())  // if extra symbols after
                     throw bad_uservalue_cast(pattern, cursor);
-                *match_type = MATCH_TYPE_NO_VALUE;
+                match_type = MATCH_TYPE_NO_VALUE;
                 return true;
             };
             if (boilerplate_a("?", PWNER::Ematch_type::MATCHANY))        goto valid_number;  // a1
@@ -97,14 +98,14 @@ PWNER::string_to_uservalue(const PWNER::Edata_type &data_type,
                     return false;
                 cursor += MASK.size();
                 if (cursor == pattern.size()) {  // end reached
-                    *match_type = MATCH_TYPE_NO_VALUE;
+                    match_type = MATCH_TYPE_NO_VALUE;
                     return true;
                 }
                 const string &possible_number = pattern.substr(cursor);  // slice [cursor:-1]
                 size_t pos = uservalue[0].parse_uservalue_number(possible_number);
                 if (pos != possible_number.size())  // if parse_uservalue_number() not parsed whole possible_number
                     throw bad_uservalue_cast(pattern, cursor + pos);
-                *match_type = MATCH_TYPE;
+                match_type = MATCH_TYPE;
                 return true;
             };
             if (boilerplate_b("==", PWNER::Ematch_type::MATCHEQUALTO,     PWNER::Ematch_type::MATCHNOTCHANGED)) goto valid_number; // 1
@@ -146,7 +147,7 @@ PWNER::string_to_uservalue(const PWNER::Edata_type &data_type,
                 }
                 /// Store the bitwise AND of both flags in the first value
                 uservalue[0].flags &= uservalue[1].flags;
-                *match_type = MATCH_TYPE;
+                match_type = MATCH_TYPE;
                 return true;
             };
             if (boilerplate_c("..",  PWNER::Ematch_type::MATCHRANGE)) goto valid_number;
@@ -157,7 +158,7 @@ PWNER::string_to_uservalue(const PWNER::Edata_type &data_type,
                 if (pos != pattern.size()) { // if parse_uservalue_number() not parsed whole possible_number
                     throw bad_uservalue_cast(pattern, pos);
                 }
-                *match_type = PWNER::Ematch_type::MATCHEQUALTO;
+                match_type = PWNER::Ematch_type::MATCHEQUALTO;
             }
     }
 

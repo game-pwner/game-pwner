@@ -39,6 +39,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         if DEBUG == 1:
             settings.proc = ProcessProcfs("FAKEMEM")
+            settings.scan_value = ScannerSequential(settings.proc)
+            self.dock3.onActionReset()
 
         self.timer = QTimer()  # refresh_process_tree() used
         self.timer.timeout.connect(self.onTitleUpdate)
@@ -52,8 +54,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def onActionPID(self):
-        if self.window_pid.isHidden():
-            self.window_pid.show()
+        self.window_pid.show()
 
     @pyqtSlot()
     def onActionCRIU(self):
@@ -100,5 +101,4 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
     @pyqtSlot()
     def onActionAbout(self):
-        if self.window_about.isHidden():
-            self.window_about.show()
+        self.window_about.show()

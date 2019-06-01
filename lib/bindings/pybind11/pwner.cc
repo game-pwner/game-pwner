@@ -23,33 +23,20 @@
 #include <pybind11/stl_bind.h>
 #include <pwner/scanner/PointerScanner.hh>
 
+
+PYBIND11_MAKE_OPAQUE(std::vector<PWNER::value_t>)
+
 namespace py = pybind11;
 
-namespace PWNER {
-    // static PyObject *
-    // addressof(PyObject *self, PyObject *obj)
-    // {
-    //     if (CDataObject_Check(obj))
-    //         return PyLong_FromVoidPtr(((CDataObject *)obj)->b_ptr);
-    //     PyErr_SetString(PyExc_TypeError,
-    //                     "invalid type");
-    //     return NULL;
-    // }
 
-    py::object addressof(py::object& o) {
-        py::object addr = o.attr("_address_")();
-        return addr;
-    }
-}
-
+// TODO[high]: split to modules to speedup build time
 PYBIND11_MODULE(pwner, m) {
     m.doc() = "pybind11 wrapper for Reverse Engine";
-    m.def("addressof", &PWNER::addressof, "gets the address where the function pointer is stored");
 
-    // TODO[high]: split to modules to speedup build time
+    // pwner/common.hh
     m.def("oom_score_adj", &oom_score_adj);
 
-    // RE/external.hh
+    // pwner/external.hh
     m.def("execute", &PWNER::execute);
     py::class_<PWNER::CProcess>(m, "CProcess")
             .def(py::init<const std::string &, const std::string &, const std::string &>())
@@ -94,10 +81,10 @@ PYBIND11_MODULE(pwner, m) {
     py::class_<PWNER::PROCESS::Regions>(m, "Regions")
             .def(py::init<>())
             .def("update_regions", &PWNER::PROCESS::Regions::update_regions)
-            .def("get_region", py::overload_cast<uintptr_t>(&PWNER::PROCESS::Regions::get_region, py::const_))
-            .def("get_sregion", py::overload_cast<uintptr_t>(&PWNER::PROCESS::Regions::get_sregion, py::const_))
-            .def("get_region", py::overload_cast<const std::string&>(&PWNER::PROCESS::Regions::get_region, py::const_))
-            .def("get_region", py::overload_cast<const std::filesystem::path&>(&PWNER::PROCESS::Regions::get_region, py::const_))
+            .def("get_region",  py::overload_cast<uintptr_t>(&PWNER::PROCESS::Regions::get_region, py::const_), py::arg("address"))
+            .def("get_sregion", py::overload_cast<uintptr_t>(&PWNER::PROCESS::Regions::get_sregion, py::const_), py::arg("address"))
+            .def("get_region",  py::overload_cast<const std::string&>(&PWNER::PROCESS::Regions::get_region, py::const_), py::arg("filename"))
+            .def("get_region",  py::overload_cast<const std::filesystem::path&>(&PWNER::PROCESS::Regions::get_region, py::const_), py::arg("filename"))
             .def_readwrite("regions", &PWNER::PROCESS::Regions::regions)
             .def_readwrite("sregions", &PWNER::PROCESS::Regions::sregions)
             ;
@@ -127,23 +114,17 @@ PYBIND11_MODULE(pwner, m) {
     py::class_<PWNER::PROCESS::IOProcfs, PWNER::PROCESS::IO>(m, "IOProcfs")
             .def(py::init<pid_t>())
             .def(py::init<const std::string &>())
-            // static methods
-            .def("running",        static_cast<bool (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::running))
-            .def("cwd",            static_cast<std::filesystem::path (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::cwd))
-            .def("exe",            static_cast<std::filesystem::path (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::exe))
-            .def("cmdline",        static_cast<std::string (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::cmdline))
-            .def("from_cmdline",   static_cast<pid_t (*)(const std::string &)>(&PWNER::PROCESS::IOProcfs::from_cmdline))
-            // methods
+            .def_static("running_",        static_cast<bool (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::running), py::arg("pid"))
+            .def_static("cwd_",            static_cast<std::filesystem::path (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::cwd), py::arg("pid"))
+            .def_static("exe_",            static_cast<std::filesystem::path (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::exe), py::arg("pid"))
+            .def_static("cmdline_",        static_cast<std::string (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::cmdline), py::arg("pid"))
+            .def_static("from_cmdline_",   static_cast<pid_t (*)(const std::string &)>(&PWNER::PROCESS::IOProcfs::from_cmdline), py::arg("pattern_cmdline"))
             .def("running",        static_cast<bool (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::running))
             .def("cwd",            static_cast<std::filesystem::path (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::cwd))
             .def("exe",            static_cast<std::filesystem::path (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::exe))
             .def("cmdline",        static_cast<std::string (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::cmdline))
             .def("pid",            static_cast<pid_t (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::pid))
             .def("update_regions", &PWNER::PROCESS::IOProcfs::update_regions)
-            //todo read(self,address,out,size) to deprecate and delete!
-            .def("read", [](PWNER::PROCESS::IOProcfs& self, uintptr_t& address, uintptr_t& out, size_t& size) -> auto {
-                return self.read(address, reinterpret_cast<void *>(out), size);
-            }, "Read from handle", py::arg("address"), py::arg("out"), py::arg("size"))
             .def("read", [](PWNER::PROCESS::IOProcfs& self, uintptr_t& address, size_t& size) -> auto {
                 std::vector<uint8_t> b(size);
                 size_t s = self.read(address, b.data(), size);
@@ -151,7 +132,7 @@ PYBIND11_MODULE(pwner, m) {
                     s = 0;
                 py::bytes result = py::bytes(reinterpret_cast<char *>(b.data()), s);
                 return result;
-            }, "Read from handle", py::arg("address"), py::arg("size"))
+            }, "Read bytes from handler", py::arg("address"), py::arg("size"))
             // todo write!
             // .def("write", &PWNER::Handle::write, "Write to handle", py::arg("address"), py::arg("in"), py::arg("size"))
             // .def("write",          static_cast<size_t (PWNER::PROCESS::IOProcfs::*)(uintptr_t, void *, size_t) const>(&PWNER::PROCESS::IOProcfs::write))
@@ -159,8 +140,8 @@ PYBIND11_MODULE(pwner, m) {
 
     // pwner/process/Process.hh
     py::class_<PWNER::PROCESS::Process, PWNER::PROCESS::IO>(m, "Process")
-            .def("get_call_address", &PWNER::PROCESS::Process::get_call_address)
-            .def("get_absolute_address", &PWNER::PROCESS::Process::get_absolute_address)
+            .def("get_call_address", &PWNER::PROCESS::Process::get_call_address, py::arg("address"))
+            .def("get_absolute_address", &PWNER::PROCESS::Process::get_absolute_address, py::arg("address"), py::arg("offset"), py::arg("size"))
             ;
 
     py::class_<PWNER::PROCESS::ProcessProcfs, PWNER::PROCESS::Process, PWNER::PROCESS::IOProcfs>(m, "ProcessProcfs")
@@ -238,53 +219,53 @@ PYBIND11_MODULE(pwner, m) {
     py::class_<PWNER::flag, bitmask::bitmask<PWNER::flag_t>>(m, "flag")
             .def(py::init<const PWNER::Edata_type&>())
             // static methods
-            .def("convert",   static_cast<PWNER::flag (*)(const PWNER::Edata_type&)>(&PWNER::flag::convert))
+            .def_static("convert",   static_cast<PWNER::flag (*)(const PWNER::Edata_type&)>(&PWNER::flag::convert), py::arg("dt"))
             // methods
-            .def("memlength", static_cast<size_t (PWNER::flag::*)(const PWNER::Edata_type&) const>(&PWNER::flag::memlength))
+            .def("memlength", static_cast<size_t (PWNER::flag::*)(const PWNER::Edata_type&) const>(&PWNER::flag::memlength), py::arg("scan_data_type"))
             .def("str",       static_cast<std::string (PWNER::flag::*)() const>(&PWNER::flag::str))
             ;
 
-    py::class_<PWNER::mem64_t> (m, "mem64")
-            .def(py::init<>())
-            .def_property("i8",  [](PWNER::mem64_t& self) -> auto { return self.i8;  }, [](PWNER::mem64_t& self, typeof(self.i8 ) set) { self.i8  = set; })
-            .def_property("u8",  [](PWNER::mem64_t& self) -> auto { return self.u8;  }, [](PWNER::mem64_t& self, typeof(self.u8 ) set) { self.u8  = set; })
-            .def_property("i16", [](PWNER::mem64_t& self) -> auto { return self.i16; }, [](PWNER::mem64_t& self, typeof(self.i16) set) { self.i16 = set; })
-            .def_property("u16", [](PWNER::mem64_t& self) -> auto { return self.u16; }, [](PWNER::mem64_t& self, typeof(self.u16) set) { self.u16 = set; })
-            .def_property("i32", [](PWNER::mem64_t& self) -> auto { return self.i32; }, [](PWNER::mem64_t& self, typeof(self.i32) set) { self.i32 = set; })
-            .def_property("u32", [](PWNER::mem64_t& self) -> auto { return self.u32; }, [](PWNER::mem64_t& self, typeof(self.u32) set) { self.u32 = set; })
-            .def_property("i64", [](PWNER::mem64_t& self) -> auto { return self.i64; }, [](PWNER::mem64_t& self, typeof(self.i64) set) { self.i64 = set; })
-            .def_property("u64", [](PWNER::mem64_t& self) -> auto { return self.u64; }, [](PWNER::mem64_t& self, typeof(self.u64) set) { self.u64 = set; })
-            .def_property("f32", [](PWNER::mem64_t& self) -> auto { return self.f32; }, [](PWNER::mem64_t& self, typeof(self.f32) set) { self.f32 = set; })
-            .def_property("f64", [](PWNER::mem64_t& self) -> auto { return self.f64; }, [](PWNER::mem64_t& self, typeof(self.f64) set) { self.f64 = set; })
-            //todo[high] add array support (bytes and chars)
-            .def("__bytes__", [](PWNER::mem64_t& self) -> auto {
-                return py::bytes(self.chars, sizeof(self.chars));
-            })
-            .def("__str__", [](PWNER::mem64_t& self) -> auto {
-                std::ostringstream result;
-                std::ostringstream bytes;
-                bytes << std::hex << std::noshowbase << std::setfill('0');
-                for (auto *cur = self.bytes; cur < self.bytes + sizeof(self.bytes); cur++) {
-                    bytes << "\\x" << std::setw(2) << +*cur;
-                }
-                result << "{\n"
-                       << "    i8 : " << std::to_string(self.i8 ) << "\n"
-                       << "    u8 : " << std::to_string(self.u8 ) << "\n"
-                       << "    i16: " << std::to_string(self.i16) << "\n"
-                       << "    u16: " << std::to_string(self.u16) << "\n"
-                       << "    i32: " << std::to_string(self.i32) << "\n"
-                       << "    u32: " << std::to_string(self.u32) << "\n"
-                       << "    i64: " << std::to_string(self.i64) << "\n"
-                       << "    u64: " << std::to_string(self.u64) << "\n"
-                       << "    f32: " << std::to_string(self.f32) << "\n"
-                       << "    f64: " << std::to_string(self.f64) << "\n"
-                       << "    bytes: " << bytes.str() << "\n"
-                       << "}";
-                // std::clog<<"returning "<<result<<std::endl;
-                return result.str();
-            })
-            .def("_address_", [](PWNER::mem64_t& self) -> uintptr_t { return reinterpret_cast<uintptr_t>(&self); }, "the base object")
-            ;
+    // py::class_<PWNER::mem64_t> (m, "mem64")
+    //         .def(py::init<>())
+    //         .def_property("i8",  [](PWNER::mem64_t& self) -> auto { return self.i8;  }, [](PWNER::mem64_t& self, typeof(self.i8 ) set) { self.i8  = set; })
+    //         .def_property("u8",  [](PWNER::mem64_t& self) -> auto { return self.u8;  }, [](PWNER::mem64_t& self, typeof(self.u8 ) set) { self.u8  = set; })
+    //         .def_property("i16", [](PWNER::mem64_t& self) -> auto { return self.i16; }, [](PWNER::mem64_t& self, typeof(self.i16) set) { self.i16 = set; })
+    //         .def_property("u16", [](PWNER::mem64_t& self) -> auto { return self.u16; }, [](PWNER::mem64_t& self, typeof(self.u16) set) { self.u16 = set; })
+    //         .def_property("i32", [](PWNER::mem64_t& self) -> auto { return self.i32; }, [](PWNER::mem64_t& self, typeof(self.i32) set) { self.i32 = set; })
+    //         .def_property("u32", [](PWNER::mem64_t& self) -> auto { return self.u32; }, [](PWNER::mem64_t& self, typeof(self.u32) set) { self.u32 = set; })
+    //         .def_property("i64", [](PWNER::mem64_t& self) -> auto { return self.i64; }, [](PWNER::mem64_t& self, typeof(self.i64) set) { self.i64 = set; })
+    //         .def_property("u64", [](PWNER::mem64_t& self) -> auto { return self.u64; }, [](PWNER::mem64_t& self, typeof(self.u64) set) { self.u64 = set; })
+    //         .def_property("f32", [](PWNER::mem64_t& self) -> auto { return self.f32; }, [](PWNER::mem64_t& self, typeof(self.f32) set) { self.f32 = set; })
+    //         .def_property("f64", [](PWNER::mem64_t& self) -> auto { return self.f64; }, [](PWNER::mem64_t& self, typeof(self.f64) set) { self.f64 = set; })
+    //         //todo[high] add array support (bytes and chars)
+    //         .def("__bytes__", [](PWNER::mem64_t& self) -> auto {
+    //             return py::bytes(self.chars, sizeof(self.chars));
+    //         })
+    //         .def("__str__", [](PWNER::mem64_t& self) -> auto {
+    //             std::ostringstream result;
+    //             std::ostringstream bytes;
+    //             bytes << std::hex << std::noshowbase << std::setfill('0');
+    //             for (auto *cur = self.bytes; cur < self.bytes + sizeof(self.bytes); cur++) {
+    //                 bytes << "\\x" << std::setw(2) << +*cur;
+    //             }
+    //             result << "{\n"
+    //                    << "    i8 : " << std::to_string(self.i8 ) << "\n"
+    //                    << "    u8 : " << std::to_string(self.u8 ) << "\n"
+    //                    << "    i16: " << std::to_string(self.i16) << "\n"
+    //                    << "    u16: " << std::to_string(self.u16) << "\n"
+    //                    << "    i32: " << std::to_string(self.i32) << "\n"
+    //                    << "    u32: " << std::to_string(self.u32) << "\n"
+    //                    << "    i64: " << std::to_string(self.i64) << "\n"
+    //                    << "    u64: " << std::to_string(self.u64) << "\n"
+    //                    << "    f32: " << std::to_string(self.f32) << "\n"
+    //                    << "    f64: " << std::to_string(self.f64) << "\n"
+    //                    << "    bytes: " << bytes.str() << "\n"
+    //                    << "}";
+    //             // std::clog<<"returning "<<result<<std::endl;
+    //             return result.str();
+    //         })
+    //         .def("_address_", [](PWNER::mem64_t& self) -> uintptr_t { return reinterpret_cast<uintptr_t>(&self); }, "the base object")
+    //         ;
 
     py::class_<PWNER::value_t> (m, "value_t")
             .def(py::init<>())
@@ -315,23 +296,43 @@ PYBIND11_MODULE(pwner, m) {
             .def_readwrite("wildcard_value", &PWNER::Cuservalue::wildcard_value)
             .def_readwrite("string_value", &PWNER::Cuservalue::string_value)
             .def_readwrite("flags", &PWNER::Cuservalue::flags)
-            .def("parse_uservalue_int", &PWNER::Cuservalue::parse_uservalue_int)
-            .def("parse_uservalue_float", &PWNER::Cuservalue::parse_uservalue_float)
-            .def("parse_uservalue_number", &PWNER::Cuservalue::parse_uservalue_number)
-            .def("parse_uservalue_bytearray", &PWNER::Cuservalue::parse_uservalue_bytearray)
-            .def("parse_uservalue_string", &PWNER::Cuservalue::parse_uservalue_string)
+            .def("parse_uservalue_int", &PWNER::Cuservalue::parse_uservalue_int, py::arg("text"))
+            .def("parse_uservalue_float", &PWNER::Cuservalue::parse_uservalue_float, py::arg("text"))
+            .def("parse_uservalue_number", &PWNER::Cuservalue::parse_uservalue_number, py::arg("text"))
+            .def("parse_uservalue_bytearray", &PWNER::Cuservalue::parse_uservalue_bytearray, py::arg("text"))
+            .def("parse_uservalue_string", &PWNER::Cuservalue::parse_uservalue_string, py::arg("text"))
             ;
 
-    m.def("string_to_uservalue", &PWNER::string_to_uservalue);
+    m.def("string_to_uservalue", [](const PWNER::Edata_type &data_type,
+                                    const std::string &text) {
+        PWNER::Ematch_type match_type;
+        std::vector<PWNER::Cuservalue> uservalue;
+        PWNER::string_to_uservalue(data_type, text, match_type, uservalue);
+        return std::make_tuple(match_type, uservalue);
+    }, py::arg("dt"), py::arg("text"));
 
     // pwner/scanner/ValueScanner.hh
     // TODO: pwner/scanner/ValueScanner.hh
+    py::bind_vector<std::vector<PWNER::value_t>>(m, "VectorValues", py::module_local(false));
+
     py::class_<PWNER::ScannerSequential>(m, "ScannerSequential")
             .def(py::init<PWNER::PROCESS::Process&>())
-            .def("scan_regions", &PWNER::ScannerSequential::scan_regions)
-            .def("scan_update",  &PWNER::ScannerSequential::scan_update)
-            .def("scan_recheck", &PWNER::ScannerSequential::scan_recheck)
-            // .def_readwrite("handler", &PWNER::ScannerSequential::handler)
+            .def("scan_regions", [](PWNER::ScannerSequential& self,
+                                    std::vector<PWNER::value_t>& writing_matches,
+                                    const PWNER::Edata_type& data_type,
+                                    const std::vector<PWNER::Cuservalue> uservalue,
+                                    const PWNER::Ematch_type& match_type) {
+                return self.scan_regions(writing_matches,data_type,uservalue.data(),match_type);
+            }, py::arg("writing_matches"), py::arg("data_type"), py::arg("uservalue"), py::arg("match_type"))
+            .def("scan_recheck", [](PWNER::ScannerSequential& self,
+                                    std::vector<PWNER::value_t>& writing_matches,
+                                    const PWNER::Edata_type& data_type,
+                                    const std::vector<PWNER::Cuservalue> uservalue,
+                                    const PWNER::Ematch_type& match_type) {
+                return self.scan_recheck(writing_matches,data_type,uservalue.data(),match_type);
+            }, py::arg("writing_matches"), py::arg("data_type"), py::arg("uservalue"), py::arg("match_type"))
+            .def("scan_update",  &PWNER::ScannerSequential::scan_update, py::arg("writing_matches"))
+            // .def_readonly("handler", &PWNER::ScannerSequential::handler)
             .def_readwrite("stop_flag", &PWNER::ScannerSequential::stop_flag)
             .def_readwrite("scan_progress", &PWNER::ScannerSequential::scan_progress)
             .def_readwrite("step", &PWNER::ScannerSequential::step)
