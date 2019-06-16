@@ -76,7 +76,7 @@ public:
     uint8_t st_device_minor;  /* Ambiguous todo rename */
     uint8_t st_device_major;  /* Ambiguous */
     uint64_t inode;
-    sfs::path file;
+    std::filesystem::path file;
 
     /// Value returned by various member functions when they fail.
     static constexpr size_t npos = static_cast<size_t>(-1);

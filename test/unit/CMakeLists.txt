@@ -1,12 +1,42 @@
+find_package(Boost 1.69 REQUIRED COMPONENTS unit_test_framework)
+include_directories(${Boost_INCLUDE_DIR})
 
-
-set(TARGET TEST_openmp_cc)
+set(TARGET openmp_cc)
 add_executable(${TARGET} openmp.cc)
-set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
-target_use_openmp(${TARGET})
-target_use_hardening(${TARGET} 2)
-target_compile_options(${TARGET} PUBLIC
-        -O3
+set_target_properties(${TARGET} PROPERTIES
+        CXX_STANDARD 20
+        PWN_OPTIMIZATION 3
+        PWN_DEBUG        True
+        PWN_WARNINGS     3
+        PWN_OPENMP       True
+        )
+pwn_target_properties(${TARGET})
+target_compile_definitions(${TARGET} PUBLIC
+        -DBOOST_TEST_DYN_LINK
+        -DBOOST_TEST_MODULE=${TARGET}
+        )
+target_link_libraries(${TARGET} PUBLIC
+        Boost::unit_test_framework
+        )
+
+
+set(TARGET pwn_cc)
+add_executable(${TARGET} process.cc)
+set_target_properties(${TARGET} PROPERTIES
+        CXX_STANDARD 20
+        PWN_OPTIMIZATION 3
+        PWN_DEBUG        True
+        PWN_WARNINGS     3
+        PWN_OPENMP       True
+        )
+pwn_target_properties(${TARGET})
+target_compile_definitions(${TARGET} PUBLIC
+        -DBOOST_TEST_DYN_LINK
+        -DBOOST_TEST_MODULE=${TARGET}
+        )
+target_link_libraries(${TARGET} PUBLIC
+        Boost::unit_test_framework
+        pwner
         )
 
 # if (CMAKE_CXX_COMPILER_ID STREQUAL GNU OR CMAKE_CXX_COMPILER_ID STREQUAL PGI)

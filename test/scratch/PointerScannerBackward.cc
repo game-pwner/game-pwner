@@ -18,7 +18,6 @@ int main(int argc, const char *argv[]) {
 
     high_resolution_clock::time_point timestamp;
 
-    // std::string target = "csgo_linux64";
     // std::string target = "PwnAdventure3-Linux-Shipping";
     std::string target = "FAKEMEM";
 

@@ -36,7 +36,7 @@
 #include <string>
 #include <cstdlib>
 #include <pwner/process/Process.hh>
-#include <pwner/process/handlers/IO_helpers.hh>
+#include <pwner/process/IO/IO.hh>
 #include <pwner/scanner/Value.hh>
 #include "cinttypes"
 #include "memory"
@@ -346,8 +346,8 @@ public:
 
 class ScannerByteSwath {
 public:
-    explicit ScannerByteSwath(PROCESS::Process& handler)
-    : handler(handler) { }
+    explicit ScannerByteSwath(std::shared_ptr<PROCESS::Process>& handler)
+    : handler(std::move(handler)) {}
 
     virtual ~ScannerByteSwath() = default;
 
@@ -388,7 +388,7 @@ private:
 
 public:
     /// Create file for storing matches
-    PROCESS::Process& handler;
+    std::shared_ptr<PROCESS::Process> handler;
     volatile bool stop_flag = false;
     volatile double scan_progress = 0;
     uintptr_t step = 1;
@@ -397,8 +397,8 @@ public:
 
 class ScannerSequential {
 public:
-    explicit ScannerSequential(PROCESS::Process& handler)
-    : handler(handler) { }
+    explicit ScannerSequential(std::shared_ptr<PROCESS::Process> handler)
+    : handler(std::move(handler)) {}
 
     /**
      *  This is used as first scan. It scans for values and allocates memory for each match.
@@ -437,7 +437,7 @@ private:
 
 public:
     /// Create file for storing matches
-    PROCESS::Process& handler;
+    std::shared_ptr<PROCESS::Process> handler;
     volatile bool stop_flag = false;
     volatile double scan_progress = 0;
     uintptr_t step = 1;
@@ -446,8 +446,8 @@ public:
 
 class ScannerAddress {
 public:
-    explicit ScannerAddress(PROCESS::IOMapped& handler)
-    : handler(handler) { }
+    explicit ScannerAddress(std::shared_ptr<PROCESS::IOMapped> handler)
+    : handler(std::move(handler)) {}
 
     /**
      *  This is used as first scan. It scans for values and allocates memory for each match.
@@ -483,15 +483,10 @@ private:
 
 public:
     /// Create file for storing matches
-    PROCESS::IOMapped& handler;
+    std::shared_ptr<PROCESS::IOMapped> handler;
     volatile bool stop_flag = false;
     volatile double scan_progress = 0;
     uintptr_t step = 1;
 };
 
-
-
-
-
 NAMESPACE_END(PWNER)
-

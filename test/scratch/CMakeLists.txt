@@ -14,13 +14,14 @@ target_compile_options(${TARGET} PUBLIC
         )
 target_link_libraries(${TARGET} PUBLIC
         pwner
+        criu
         )
 
 # ┌──────────────────────────────────────────────────────────────────┐
-#   TOOL_HEX
+#   TOOL_SCRATCH2
 # └──────────────────────────────────────────────────────────────────┘
-set(TARGET TOOL_HEX)
-add_executable(${TARGET} hex.cc)
+set(TARGET TOOL_SCRATCH2)
+add_executable(${TARGET} scratch2.cc)
 set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
 target_use_debug(${TARGET})
 target_use_hardening(${TARGET} 2)
@@ -28,9 +29,11 @@ target_use_warnings(${TARGET} 1)
 target_use_openmp(${TARGET})
 target_compile_options(${TARGET} PUBLIC
         -O3
+        -Wall -Wextra -Wpedantic
         )
 target_link_libraries(${TARGET} PUBLIC
-        pwner
+#        pwner
+        stdc++fs
         )
 
 # ┌──────────────────────────────────────────────────────────────────┐

@@ -13,44 +13,37 @@ int main(int argc, const char *argv[]) {
     oom_score_adj(801);
     using std::cout, std::clog, std::cerr, std::endl;
     using namespace std::chrono;
-    high_resolution_clock::time_point timestamp;
-
-    //sleep(100000);
-    //return 0;
+    using namespace PWNER;
 
     std::string target = "FAKEMEM";
-    // std::string target = "csgo_linux64";
     std::string search_for = "60";
-    // PWNER::Edata_type data_type = PWNER::Edata_type::ANYNUMBER;
-    PWNER::Edata_type data_type = PWNER::Edata_type::INTEGER64;
+    // Edata_type data_type = Edata_type::ANYNUMBER;
+    Edata_type data_type = Edata_type::INTEGER64;
+    std::vector<Cuservalue> uservalue;
+    uservalue.resize(1);
+    uservalue[0].parse_uservalue_number(search_for);
+    Ematch_type match_type = Ematch_type::MATCHEQUALTO;
 
-    PWNER::PROCESS::ProcessProcfs handler(target);
+    std::shared_ptr handler = std::make_shared<PROCESS::ProcessProcfs>(target);
     if (!handler)
         throw std::invalid_argument("Cannot find "+target+" process. Nothing to do.");
 
-    PWNER::ScannerSequential scanner(handler);
+    ScannerSequential scanner(handler);
 
     clog<<target
-        <<", pid: "<<handler.pid()
-        <<", cmdline: "<< handler.cmdline()
-        <<", exe: "<<handler.exe()
-        <<", running: "<<handler.running()
+        <<", pid: "<<handler->pid()
+        <<", cmdline: "<< handler->cmdline()
+        <<", exe: "<<handler->exe()
+        <<", running: "<<handler->running()
         <<endl;
 
 
-    std::vector<PWNER::Cuservalue> uservalue;
-    PWNER::Ematch_type match_type;
-    try {
-        PWNER::string_to_uservalue(data_type, search_for, match_type, uservalue);
-    } catch (PWNER::bad_uservalue_cast &e) {
-        clog<<e.what()<<endl;
-        return 0;
-    }
 
-    std::vector<PWNER::value_t> matches_first;
-    timestamp = high_resolution_clock::now();
-    scanner.scan_regions(matches_first, data_type, uservalue.data(), match_type);
-    clog<<"Scan 1/3 done in: "<<duration_cast<duration<double>>(high_resolution_clock::now() - timestamp).count()<<" seconds"<<endl;
+    std::vector<value_t> matches_first;
+    {
+        Timer __t("First Scan");
+        scanner.scan_regions(matches_first, data_type, uservalue.data(), match_type);
+    }
     clog<<"size: "<<matches_first.size()<<endl;
     clog<<"capacity: "<<matches_first.capacity()<<endl;
 
@@ -59,7 +52,7 @@ int main(int argc, const char *argv[]) {
     for(auto v : matches_first) {
         if (limit-->0) {
             clog<<v;
-            PWNER::PROCESS::Region *r = handler.get_region(v.address);
+            PROCESS::Region *r = handler->get_region(v.address);
             if (r)
                 clog<<", region: "<<*r;
             clog<<endl;
@@ -71,29 +64,46 @@ int main(int argc, const char *argv[]) {
 
     clog<<"============================================="<<endl;
 
-    std::vector<PWNER::value_t> matches_prev = matches_first;
-    timestamp = high_resolution_clock::now();
-    scanner.scan_update(matches_prev);
-    scanner.scan_recheck(matches_prev, data_type, uservalue.data(), match_type);
-    clog<<"Scan 2/3 done in: "<<duration_cast<duration<double>>(high_resolution_clock::now() - timestamp).count()<<" seconds"<<endl;
+    std::vector<value_t> matches_prev = matches_first;
+    {
+        Timer __t("Next Scan");
+        {
+            Timer __t1("Next Scan/Update");
+            scanner.scan_update(matches_prev);
+        }
+        {
+            Timer __t2("Next Scan/Recheck");
+            scanner.scan_recheck(matches_prev, data_type, uservalue.data(), match_type);
+        }
+    }
     clog<<"size: "<<matches_prev.size()<<endl;
     clog<<"capacity: "<<matches_prev.capacity()<<endl;
 
 
     clog<<"============================================="<<endl;
 
-    timestamp = high_resolution_clock::now();
-    PWNER::PROCESS::ProcessHeap handler_mmap(handler);
-    // PWNER::ProcessFile handler_mmap(handler, "DELMEPLZ");
-    if (!handler_mmap)
+    // std::shared_ptr handler_mmap = std::make_shared<PROCESS::ProcessHeap>(*handler);
+    std::shared_ptr handler_mmap = std::make_shared<PROCESS::ProcessFile>(*handler, std::filesystem::current_path()/"cg73bskv73pcnrt");
+    if (!*handler_mmap)
         throw std::invalid_argument("Cannot find "+target+" process. Nothing to do.");
-    PWNER::ScannerSequential scanner_mmap(handler_mmap);
+    ScannerSequential scanner_mmap(handler_mmap);
 
 
-    std::vector<PWNER::value_t> matches_curr = matches_prev;
+    std::vector<value_t> matches_curr = matches_prev;
+
+    {
+        Timer __t("Next Scan");
+        {
+            Timer __t1("Next Scan/Update");
+            scanner_mmap.scan_update(matches_curr);
+        }
+        {
+            Timer __t2("Next Scan/Recheck");
+            scanner_mmap.scan_recheck(matches_curr, data_type, uservalue.data(), match_type);
+        }
+    }
     scanner_mmap.scan_update(matches_curr);
     scanner_mmap.scan_recheck(matches_curr, data_type, uservalue.data(), match_type);
-    clog<<"Scan 3/3 done in: "<<duration_cast<duration<double>>(high_resolution_clock::now() - timestamp).count()<<" seconds"<<endl;
     clog<<"size: "<<matches_curr.size()<<endl;
     clog<<"capacity: "<<matches_curr.capacity()<<endl;
 
@@ -123,7 +133,7 @@ int main(int argc, const char *argv[]) {
         if UNLIKELY(curr != curr_end && (*fir).address != (*curr).address) {
             c++;
             clog<<"lost: "<<*fir;
-            PWNER::PROCESS::Region *r = handler.get_region((*fir).address);
+            PROCESS::Region *r = handler->get_region((*fir).address);
             if LIKELY(r)
                 clog<<", region: "<<*r;
             clog<<endl;
@@ -135,7 +145,7 @@ int main(int argc, const char *argv[]) {
             if UNLIKELY((*fir).flags != (*curr).flags) {
                 c++;
                 clog<<"different: "<<*fir<<" and "<<*curr;
-                PWNER::PROCESS::Region *r = handler.get_region((*fir).address);
+                PROCESS::Region *r = handler->get_region((*fir).address);
                 if LIKELY(r)
                     clog<<", region: "<<*r;
                 clog<<endl;

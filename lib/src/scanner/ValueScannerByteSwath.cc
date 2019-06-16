@@ -1,9 +1,10 @@
 
 #include <pwner/scanner/ValueScanner.hh>
 
+using namespace PWNER;
 
 bool
-PWNER::ScannerByteSwath::scan_regions(ByteMatches& writing_matches,
+ScannerByteSwath::scan_regions(ByteMatches& writing_matches,
                                       const Edata_type& data_type,
                                       const Cuservalue *uservalue,
                                       const Ematch_type& match_type)
@@ -11,7 +12,7 @@ PWNER::ScannerByteSwath::scan_regions(ByteMatches& writing_matches,
     using namespace std;
     using namespace std::chrono;
 
-    if (!PWNER::sm_choose_scanroutine(data_type, match_type, uservalue, false)) {
+    if (!sm_choose_scanroutine(data_type, match_type, uservalue, false)) {
         printf("unsupported scan for current data type.\n");
         return false;
     }
@@ -19,10 +20,10 @@ PWNER::ScannerByteSwath::scan_regions(ByteMatches& writing_matches,
     scan_progress = 0.0;
     stop_flag = false;
 
-    std::vector<PWNER::value_t> res;
-    PROCESS::IOCached cachedReader(handler);
+    std::vector<value_t> res;
+    PROCESS::IOCached cachedReader(*handler);
 
-    for(const PROCESS::Region& region : handler.regions) {
+    for(const PROCESS::Region& region : handler->regions) {
         size_t region_beg = region.address;
         size_t region_end = region.address + region.size;
 
@@ -35,7 +36,7 @@ PWNER::ScannerByteSwath::scan_regions(ByteMatches& writing_matches,
             if UNLIKELY(copied == PROCESS::IO::npos) {
                 break;
             }
-            PWNER::flag checkflags;
+            flag checkflags;
 
             /* check if we have a match */
             size_t match_length = (*sm_scan_routine)(&memory_ptr, copied, nullptr, uservalue, checkflags);
@@ -43,7 +44,7 @@ PWNER::ScannerByteSwath::scan_regions(ByteMatches& writing_matches,
                 writing_matches.add_element(reg_pos, &memory_ptr, checkflags);
                 required_extra_bytes_to_record = match_length - 1;
             } else if UNLIKELY(required_extra_bytes_to_record > 0) {
-                writing_matches.add_element(reg_pos, &memory_ptr, PWNER::flag_t::flags_empty);
+                writing_matches.add_element(reg_pos, &memory_ptr, flag_t::flags_empty);
                 required_extra_bytes_to_record--;
             }
         }
@@ -55,15 +56,15 @@ PWNER::ScannerByteSwath::scan_regions(ByteMatches& writing_matches,
 }
 
 bool
-PWNER::ScannerByteSwath::scan_update(PWNER::ByteMatches& writing_matches) {
-    PROCESS::IOCached reader(handler);
+ScannerByteSwath::scan_update(ByteMatches& writing_matches) {
+    PROCESS::IOCached reader(*handler);
 
     // Invalidate cache to get fresh values
     for (ByteSwath& s : writing_matches.swaths) {
         //const size_t copied = (*handler).read(s.base_address, &s.bytes[0], s.bytes.size());
         const size_t copied = reader.read(s.base_address, &s.bytes[0], s.bytes.size());
         /* check if the read succeeded */
-        if UNLIKELY(copied == handler.npos) {
+        if UNLIKELY(copied == PROCESS::IO::npos) {
             //cout<<"Resizing swath "<<HEX(s.base_address)<<" from "<<s.bytes.size()<<" to "<<0<<" elements"<<endl;
             //cout<<"Error: can not read "<<s.bytes.size()<<" bytes from "<<HEX(s.base_address)<<": "<<strerror(errno)<<endl;
             s.bytes.resize(0);
@@ -79,14 +80,14 @@ PWNER::ScannerByteSwath::scan_update(PWNER::ByteMatches& writing_matches) {
 }
 
 bool
-PWNER::ScannerByteSwath::scan_recheck(ByteMatches& writing_matches,
-                                      const PWNER::Edata_type& data_type,
-                                      const PWNER::Cuservalue *uservalue,
-                                      PWNER::Ematch_type match_type)
+ScannerByteSwath::scan_recheck(ByteMatches& writing_matches,
+                                      const Edata_type& data_type,
+                                      const Cuservalue *uservalue,
+                                      Ematch_type match_type)
 {
     using namespace std;
 
-    if (!PWNER::sm_choose_scanroutine(data_type, match_type, uservalue, false)) {
+    if (!sm_choose_scanroutine(data_type, match_type, uservalue, false)) {
         printf("unsupported scan for current data type.\n");
         return false;
     }
@@ -97,7 +98,7 @@ PWNER::ScannerByteSwath::scan_recheck(ByteMatches& writing_matches,
     for (ByteSwath& s : writing_matches.swaths) {
         for (size_t it = 0; it < s.bytes.size(); it++) {
             mem64_t *mem = reinterpret_cast<mem64_t *>(&s.bytes[it]);
-            PWNER::flag f = s.flags[it];
+            flag f = s.flags[it];
             size_t mem_size = f.memlength(data_type);
 
             if (f != flag_t::flags_empty) {
@@ -105,7 +106,7 @@ PWNER::ScannerByteSwath::scan_recheck(ByteMatches& writing_matches,
                 value_t val;
                 val = s.to_value(it);
 
-                PWNER::flag checkflags; // = flag_t::flags_empty;
+                flag checkflags; // = flag_t::flags_empty;
                 unsigned int match_length = (*sm_scan_routine)(mem, mem_size, &val, uservalue, checkflags);
                 s.flags[it] = checkflags;
             }
@@ -117,7 +118,7 @@ PWNER::ScannerByteSwath::scan_recheck(ByteMatches& writing_matches,
 }
 
 bool
-PWNER::ScannerByteSwath::scan_fit(PWNER::ByteMatches& writing_matches) {
+ScannerByteSwath::scan_fit(ByteMatches& writing_matches) {
     // Invalidate cache to get fresh values
     for (ByteSwath& s : writing_matches.swaths) {
         s.bytes.shrink_to_fit();

@@ -15,6 +15,10 @@ NAMESPACE_BEGIN(PROCESS)
 
 class Regions {
 public:
+    Regions() = default;
+
+    virtual ~Regions() = default;
+    
     virtual void update_regions() {
         for (Region& region : regions) {
             if (region.parent != 0) {

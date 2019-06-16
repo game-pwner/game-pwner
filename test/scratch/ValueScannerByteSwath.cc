@@ -19,7 +19,6 @@ int main(int argc, const char *argv[]) {
     //return 0;
 
     std::string target = "FAKEMEM";
-    // std::string target = "csgo_linux64";
     std::string search_for = "60";
     // PWNER::Edata_type data_type = PWNER::Edata_type::ANYNUMBER;
     PWNER::Edata_type data_type = PWNER::Edata_type::INTEGER64;

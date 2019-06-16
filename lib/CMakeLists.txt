@@ -2,6 +2,8 @@
 #   This is main library
 # └──────────────────────────────────────────────────────────────────┘
 
+find_package(Boost 1.45.0 COMPONENTS iostreams serialization)
+
 # ┌──────────────────────────────────────────────────────────────────┐
 #   Target declaration
 # └──────────────────────────────────────────────────────────────────┘
@@ -24,19 +26,24 @@ set_target_properties(pwner PROPERTIES
         CXX_STANDARD 20
         VERSION   ${${CMAKE_PROJECT_NAME}_VERSION}
         SOVERSION ${${CMAKE_PROJECT_NAME}_VERSION_MAJOR}
+        PWN_OPTIMIZATION 3
+        PWN_TUNE         False
+        PWN_DEBUG        True
+        PWN_SHARED_LIBS  False
+        PWN_WARNINGS     1
+        PWN_HARDENING    2
+        PWN_OPENMP       True
         )
-target_use_debug(pwner)
-target_use_hardening(pwner 2)
-target_use_warnings(pwner 1)
-target_use_openmp(pwner)
+pwn_target_properties(pwner)
 target_compile_options(pwner PUBLIC
-        -O3
         -fsplit-stack
         )
 target_link_libraries(pwner PUBLIC
         stdc++fs
         rt
         bitmask
+        Boost::iostreams
+        Boost::serialization
         )
 add_dependencies(pwner bitmask)
 

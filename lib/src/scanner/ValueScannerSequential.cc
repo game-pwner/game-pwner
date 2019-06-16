@@ -26,16 +26,17 @@
 #include <pwner/scanner/ValueScanner.hh>
 #include <pwner/common.hh>
 
+using namespace PWNER;
 
 bool
-PWNER::ScannerSequential::scan_regions(std::vector<PWNER::value_t>& writing_matches,
+ScannerSequential::scan_regions(std::vector<value_t>& writing_matches,
                                        const Edata_type& data_type,
                                        const Cuservalue *uservalue,
                                        const Ematch_type& match_type) {
     using namespace std;
     using namespace std::chrono;
 
-    if (!PWNER::sm_choose_scanroutine(data_type, match_type, uservalue, false)) {
+    if (!sm_choose_scanroutine(data_type, match_type, uservalue, false)) {
         printf("unsupported scan for current data type.\n");
         return false;
     }
@@ -44,7 +45,7 @@ PWNER::ScannerSequential::scan_regions(std::vector<PWNER::value_t>& writing_matc
     stop_flag = false;
 
 
-    for(const PROCESS::Region& region : handler.regions) {
+    for(const PROCESS::Region& region : handler->regions) {
         size_t region_beg = region.address;
         size_t region_end = region.address + region.size;
 
@@ -52,8 +53,8 @@ PWNER::ScannerSequential::scan_regions(std::vector<PWNER::value_t>& writing_matc
         // #pragma omp parallel firstprivate(data_type, uservalue, match_type, region_beg, region_end), shared(writing_matches)
         {
             // У каждого потока есть свой кеш
-            PROCESS::IOCached cachedReader(handler);
-            std::vector<PWNER::value_t> res; //todo[high] или лучше сразу в writing_matches писать? по идее - да
+            PROCESS::IOCached cachedReader(*handler);
+            std::vector<value_t> res; //todo[high] или лучше сразу в writing_matches писать? по идее - да
 
             // #pragma omp for
             for(uintptr_t reg_pos = region_beg; reg_pos < region_end; reg_pos += step) {
@@ -65,13 +66,13 @@ PWNER::ScannerSequential::scan_regions(std::vector<PWNER::value_t>& writing_matc
                     // break; // В однопотоке тут будет break;
                     continue;
                 }
-                PWNER::flag checkflags;
+                flag checkflags;
 
                 /* check if we have a match */
                 size_t match_length = (*sm_scan_routine)(&memory_ptr, copied, nullptr, uservalue, checkflags);
 
                 if UNLIKELY(match_length > 0) {
-                    #pragma omp critical
+                    // #pragma omp critical
                     res.emplace_back(reg_pos, memory_ptr, checkflags);
                 }
             }
@@ -86,26 +87,26 @@ PWNER::ScannerSequential::scan_regions(std::vector<PWNER::value_t>& writing_matc
 }
 
 
-bool PWNER::ScannerSequential::scan_update(std::vector<PWNER::value_t>& writing_matches) {
-    PROCESS::IOCached reader(handler);
+bool ScannerSequential::scan_update(std::vector<value_t>& writing_matches) {
+    PROCESS::IOCached reader(*handler);
 
     // Invalidate cache to get fresh values
     for (value_t& s : writing_matches) {
-        //const size_t copied = (*handler).read(s.base_address, &s.bytes[0], s.bytes.size());
+        //const size_t copied = (*handler).read(s.address, &s.mem, sizeof(s.mem));
         const size_t copied = reader.read(s.address, &s.mem, sizeof(s.mem));
         /* check if the read succeeded */
-        if UNLIKELY(copied == handler.npos) {
+        if UNLIKELY(copied == PROCESS::IO::npos) {
             s.flags = flag_t::flags_empty;
         } else if UNLIKELY(copied < sizeof(s.mem)) {
             /* go ahead with the partial read and stop the gathering process */
-            // todo[high] to complete
-            // if (copied > 6) s.flags &= ~flag_t::flags_64b;
-            // if (copied > 5) s.flags &= ~flag_t::flags_64b;
-            // if (copied > 4) s.flags &= ~flag_t::flags_64b;
-            // if (copied > 3) s.flags &= ~flag_t::flags_64b;
-            // if (copied > 2) s.flags &= ~flag_t::flags_32b;
-            // if (copied > 1) s.flags &= ~flag_t::flags_32b;
-            // if (copied > 0) s.flags &= ~flag_t::flags_16b;
+            if (copied <= 7) s.flags &= ~flag_t::flags_64b;
+            if (copied <= 6) s.flags &= ~flag_t::flags_64b;
+            if (copied <= 5) s.flags &= ~flag_t::flags_64b;
+            if (copied <= 4) s.flags &= ~flag_t::flags_64b;
+            if (copied <= 3) s.flags &= ~flag_t::flags_32b;
+            if (copied <= 2) s.flags &= ~flag_t::flags_32b;
+            if (copied <= 1) s.flags &= ~flag_t::flags_16b;
+            if (copied == 0) s.flags = flag_t::flags_empty;
         }
     }
     scan_fit(writing_matches);
@@ -114,13 +115,13 @@ bool PWNER::ScannerSequential::scan_update(std::vector<PWNER::value_t>& writing_
 
 
 bool
-PWNER::ScannerSequential::scan_recheck(std::vector<PWNER::value_t>& writing_matches,
-                                       const PWNER::Edata_type& data_type,
-                                       const PWNER::Cuservalue *uservalue,
-                                       PWNER::Ematch_type match_type) {
+ScannerSequential::scan_recheck(std::vector<value_t>& writing_matches,
+                                const Edata_type& data_type,
+                                const Cuservalue *uservalue,
+                                Ematch_type match_type) {
     using namespace std;
 
-    if (!PWNER::sm_choose_scanroutine(data_type, match_type, uservalue, false)) {
+    if (!sm_choose_scanroutine(data_type, match_type, uservalue, false)) {
         printf("unsupported scan for current data type.\n");
         return false;
     }
@@ -128,9 +129,9 @@ PWNER::ScannerSequential::scan_recheck(std::vector<PWNER::value_t>& writing_matc
     scan_progress = 0.0;
     stop_flag = false;
 
-    for (PWNER::value_t& val : writing_matches) {
+    for (value_t& val : writing_matches) {
         size_t mem_size = val.flags.memlength(data_type);
-        PWNER::flag checkflags;
+        flag checkflags;
         unsigned int match_length = (*sm_scan_routine)(&val.mem, mem_size, &val, uservalue, checkflags);
         val.flags = checkflags;
     }
@@ -140,9 +141,17 @@ PWNER::ScannerSequential::scan_recheck(std::vector<PWNER::value_t>& writing_matc
 }
 
 
-bool PWNER::ScannerSequential::scan_fit(std::vector<PWNER::value_t>& writing_matches) {
+bool ScannerSequential::scan_fit(std::vector<value_t>& writing_matches) {
     // Invalidate cache to get fresh values
-    writing_matches.shrink_to_fit();
+    std::vector<value_t> result;
+    result.reserve(writing_matches.size());
+    for (const value_t& v : writing_matches) {
+        if (v.flags == flag_t::flags_empty)
+            continue;
+        result.push_back(v);
+    }
+    result.shrink_to_fit();
 
+    writing_matches = std::move(result);
     return true;
 }

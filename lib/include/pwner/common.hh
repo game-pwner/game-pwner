@@ -53,20 +53,6 @@ LIFT_ENUM_OP(^,^=)
 
 #endif
 
-
-//constexpr std::size_t operator""_KiB(unsigned long long v) {
-//    return v<<10u;
-//}
-//constexpr std::size_t operator""_MiB(unsigned long long v) {
-//    return v<<20u;
-//}
-//constexpr std::size_t operator""_GiB(unsigned long long v) {
-//    return v<<30u;
-//}
-constexpr std::size_t KiB = 1u<<10u;
-constexpr std::size_t MiB = 1u<<20u;
-constexpr std::size_t GiB = 1u<<30u;
-
 #ifndef FORCE_INLINE
 # if __MSVC__ // _MSC_VER
 #  define FORCE_INLINE __forceinline
@@ -96,28 +82,11 @@ constexpr std::size_t GiB = 1u<<30u;
 #endif
 
 
-typedef int8_t i8;
-typedef uint8_t u8;
-typedef int16_t i16;
-typedef uint16_t u16;
-typedef int32_t i32;
-typedef uint32_t u32;
-typedef int64_t i64;
-typedef uint64_t u64;
-typedef float f32;
-typedef double f64;
-
-
-
 static void oom_score_adj(ssize_t x) {
     std::fstream f("/proc/self/oom_score_adj", std::ios::out);
     if (f.is_open())
         f << std::to_string(x);
 }
-
-
-namespace sfs = std::filesystem;
-
 
 
 /** @arg what: any number
@@ -141,7 +110,7 @@ std::string HEX(const T& value)
 
 class Timer {
 public:
-    explicit Timer(std::string what = "Timer")
+    explicit Timer(std::string what)
             : m_what(std::move(what)), m_tp(std::chrono::high_resolution_clock::now()) {}
 
     ~Timer() {

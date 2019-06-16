@@ -336,8 +336,19 @@ enum wildcard_t
 
 
 /* this struct describes values provided by users */
-class Cuservalue
-{
+class Cuservalue {
+public:
+    size_t parse_uservalue_bytearray(const std::string& text);
+
+    size_t parse_uservalue_string(const std::string& text);
+
+    /* parse int or float */
+    size_t parse_uservalue_number(const std::string& text);
+
+    size_t parse_uservalue_int(const std::string& text);
+
+    size_t parse_uservalue_float(const std::string& text);
+
 public:
     int8_t   i8;
     uint8_t  u8;
@@ -349,28 +360,17 @@ public:
     uint64_t u64;
     float    f32;
     double   f64;
-    
+
     uint8_t *bytearray_value;
     wildcard_t *wildcard_value;
 //    std::vector<uint8_t> bytearray_value;
 //    std::vector<wildcard_t> wildcard_value;
-    
+
     char *string_value;
 //    std::string string_value;
 //    std::wstring wstring_value;
-    
+
     flag flags;
-
-    size_t parse_uservalue_int(const std::string& text);
-
-    size_t parse_uservalue_float(const std::string& text);
-
-/* parse int or float */
-    size_t parse_uservalue_number(const std::string& text);
-
-    size_t parse_uservalue_bytearray(const std::string& text);
-
-    size_t parse_uservalue_string(const std::string& text);
 };
 
 

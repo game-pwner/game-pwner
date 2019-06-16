@@ -110,7 +110,7 @@ PYBIND11_MODULE(pwner, m) {
 
     //todo also pwner/process/IO.hh
 
-    // pwner/process/handlers/Procfs.hh
+    // pwner/process/IO/Procfs.hh
     py::class_<PWNER::PROCESS::IOProcfs, PWNER::PROCESS::IO>(m, "IOProcfs")
             .def(py::init<pid_t>())
             .def(py::init<const std::string &>())
