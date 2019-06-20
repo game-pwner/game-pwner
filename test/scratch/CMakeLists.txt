@@ -1,3 +1,4 @@
+find_package(Boost REQUIRED COMPONENTS iostreams filesystem)
 
 # ┌──────────────────────────────────────────────────────────────────┐
 #   TOOL_SCRATCH
@@ -28,29 +29,16 @@ target_use_hardening(${TARGET} 2)
 target_use_warnings(${TARGET} 1)
 target_use_openmp(${TARGET})
 target_compile_options(${TARGET} PUBLIC
-        -O3
+        -O0
+        -g3
+        -ggdb3
         -Wall -Wextra -Wpedantic
         )
 target_link_libraries(${TARGET} PUBLIC
 #        pwner
         stdc++fs
-        )
-
-# ┌──────────────────────────────────────────────────────────────────┐
-#   TOOL_ValueScannerByteSwath
-# └──────────────────────────────────────────────────────────────────┘
-set(TARGET TOOL_ValueScannerByteSwath)
-add_executable(${TARGET} ValueScannerByteSwath.cc)
-set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
-target_use_debug(${TARGET})
-target_use_hardening(${TARGET} 2)
-target_use_warnings(${TARGET} 1)
-target_use_openmp(${TARGET})
-target_compile_options(${TARGET} PUBLIC
-        -O3
-        )
-target_link_libraries(${TARGET} PUBLIC
-        pwner
+        Boost::iostreams
+        Boost::filesystem
         )
 
 # ┌──────────────────────────────────────────────────────────────────┐

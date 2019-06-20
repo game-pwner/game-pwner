@@ -1,61 +1,61 @@
-#include <iostream>
-#include <cstring>
-#include <bitset>
-#include <memory>
-#include <cmath>
-#include <iomanip>
+#include <utility>
 #include <vector>
-#include <memory>
+#include <iostream>
+#include <chrono>
+#include <iomanip>
+#include <filesystem>
+#include <boost/iostreams/device/mapped_file.hpp>
+#include <boost/filesystem.hpp>
 
 using namespace std;
 
 
-class base {
-public:
-    virtual ~base() = default;
-    virtual void none() const = 0;
-};
+using scan_routine_t = size_t(*)(int,int);
 
-class der1 : public base {
-public:
-    der1() = default;
-    operator bool() {return true;}
-    void none() const {cout<<"123"<<endl;}
-};
-
-class my {
-public:
-    // my(shared_ptr<base> x)
-    // : parent(std::move(x)) {}
-    //
-    // my(base& x) {
-    //     parent = shared_ptr<base>(&x, []([[maybe_unused]] base *p){});
-    // }
-
-    my(const shared_ptr<base>& x)
-    : parent(*x) {parent.none();}
-
-    my(const base& x)
-    : parent(const_cast<base&>(x)) {parent.none();}
-
-    void gav() {parent.none();}
-
-    // std::shared_ptr<base> parent;
-    const base& parent;
-};
+extern scan_routine_t scan_routine;
 
 
 
-int main() {
+template<typename _Tp>
+size_t MM(_Tp a, _Tp b) {
+    cout<<"a-b, where a="<<a<<", b="<<b<<endl;
+    return a-b;
+}
+
+template<typename _Tp>
+size_t PP(_Tp a, _Tp b) {
+    cout<<"a+b, where a="<<a<<", b="<<b<<endl;
+    return a+b;
+}
+
+
+
+
+scan_routine_t get_scanroutine(int __c) {
+    if (__c == 0b00) {
+        return MM<int>;
+    }
+    if (__c == 0b10) {
+        return PP;
+    }
+    return nullptr;
+}
+
+
+
+
+bool choose_scanroutine(int __c) {
+    scan_routine = get_scanroutine(__c);
+
+    return scan_routine != nullptr;
+}
+
+
+int main(int argc, char *argv[]) {
     using namespace std;
 
-    my *m;
-    {
-        der1 d1;
-        m = new my(d1);
-    }
-    m->gav();
-    delete m;
+    choose_scanroutine(0b00);
+    scan_routine(10,20);
 
     return 0;
 }

@@ -20,13 +20,33 @@ target_link_libraries(${TARGET} PUBLIC
         )
 
 
-set(TARGET pwn_cc)
+set(TARGET process_cc)
 add_executable(${TARGET} process.cc)
 set_target_properties(${TARGET} PROPERTIES
         CXX_STANDARD 20
         PWN_OPTIMIZATION 3
         PWN_DEBUG        True
         PWN_WARNINGS     3
+        PWN_OPENMP       True
+        )
+pwn_target_properties(${TARGET})
+target_compile_definitions(${TARGET} PUBLIC
+        -DBOOST_TEST_DYN_LINK
+        -DBOOST_TEST_MODULE=${TARGET}
+        )
+target_link_libraries(${TARGET} PUBLIC
+        Boost::unit_test_framework
+        pwner
+        )
+
+
+set(TARGET scanner_cc)
+add_executable(${TARGET} scanner.cc)
+set_target_properties(${TARGET} PROPERTIES
+        CXX_STANDARD 20
+        PWN_OPTIMIZATION 3
+        PWN_DEBUG        True
+        PWN_WARNINGS     2
         PWN_OPENMP       True
         )
 pwn_target_properties(${TARGET})

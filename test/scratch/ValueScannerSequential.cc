@@ -6,6 +6,7 @@
 #include <string>
 #include <chrono>
 #include <pwner/process/Process.hh>
+#include <pwner/scanner/Matches.hh>
 #include <pwner/scanner/ValueScanner.hh>
 
 
