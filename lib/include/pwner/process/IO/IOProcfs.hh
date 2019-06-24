@@ -3,7 +3,6 @@
 #include <regex>
 #include <pwner/common.hh>
 #include <pwner/external.hh>
-#include <pwner/process/Regions.hh>
 #include <pwner/process/IO/IO.hh>
 #include <cinttypes>
 #include <sys/uio.h> // process_vm_readv
@@ -109,71 +108,6 @@ public:
             regions.push_back(r);
         }
 
-        // #include <inttypes.h>  // SCNx64, SCNx8, SCNu64
-        // std::string line;
-        // while (getline(maps, line)) {
-        //     // 00601000-00602000 rw-p 00001000 08:11 3427227      /bin/FAKEMEM
-        //     const char *f = "%" SCNx64 "-%" SCNx64 " %4s %" SCNx64 " %" SCNx8 ":%" SCNx8 " %" SCNu64 " %[^\n]s";
-        //
-        //     uint64_t h_addr_begin;
-        //     uint64_t h_addr_end;
-        //     char mode[5];
-        //     uint64_t h_off;
-        //     uint8_t h_dev1;
-        //     uint8_t h_dev2;
-        //     uint64_t d_inode;
-        //     char filepath[1u<<10u];
-        //
-        //     sscanf(line.c_str(), f, &h_addr_begin, &h_addr_end, &mode, &h_off, &h_dev1, &h_dev2, &d_inode, &filepath);
-        //
-        //     Region r;
-        //     r.address = h_addr_begin;
-        //     r.size = h_addr_end - h_addr_begin;
-        //     r.mode |= (mode[0] == 'r') ? region_mode_t::readable : region_mode_t::none;
-        //     r.mode |= (mode[1] == 'w') ? region_mode_t::writable : region_mode_t::none;
-        //     r.mode |= (mode[2] == 'x') ? region_mode_t::executable : region_mode_t::none;
-        //     r.mode |= (mode[3] == 's') ? region_mode_t::shared : region_mode_t::none;
-        //     r.offset = h_off;
-        //     r.st_device_major = h_dev1;
-        //     r.st_device_minor = h_dev2;
-        //     r.inode = d_inode;
-        //     r.file = std::filesystem::path(filepath);
-        //     regions.push_back(r);
-        // }
-
-        // std::string line;
-        // while (getline(maps, line)) {
-        //     // 00601000-00602000 rw-p 00001000 08:11 3427227      /bin/FAKEMEM
-        //     std::istringstream ss(line);
-        //     std::uintptr_t hex_addr_beg;
-        //     std::uintptr_t hex_addr_end;
-        //     std::string mode;
-        //     std::uintptr_t hex_offset;
-        //     std::uintptr_t hex_dev_major;
-        //     std::uintptr_t hex_dev_minor;
-        //     std::uintptr_t inode;
-        //     char skip_c;
-        //     std::string path;
-        //     if (ss >> std::hex >> hex_addr_beg >> skip_c >> hex_addr_end
-        //            >> mode >> hex_offset >> hex_dev_major >> skip_c >> hex_dev_minor >> std::dec >> inode >> std::ws) {
-        //         getline(ss, path);
-        //         Region r;
-        //         r.address = hex_addr_beg;
-        //         r.size = hex_addr_end - hex_addr_beg;
-        //         r.mode |= (mode[0] == 'r') ? region_mode_t::readable : region_mode_t::none;
-        //         r.mode |= (mode[1] == 'w') ? region_mode_t::writable : region_mode_t::none;
-        //         r.mode |= (mode[2] == 'x') ? region_mode_t::executable : region_mode_t::none;
-        //         r.mode |= (mode[3] == 's') ? region_mode_t::shared : region_mode_t::none;
-        //         r.offset = hex_offset;
-        //         r.st_device_major = static_cast<uint8_t>(hex_dev_major);
-        //         r.st_device_minor = static_cast<uint8_t>(hex_dev_minor);
-        //         r.inode = inode;
-        //         r.file = path;
-        //         regions.push_back(r);
-        //         std::clog << "r: " << r << std::endl;
-        //     }
-        // }
-
         for (size_t i = 0; i < regions.size(); i++) {
             Region& r = regions[i];
             r.id = i;
@@ -193,7 +127,7 @@ public:
             }
         }
 
-        Regions::update_regions();
+        IO::update_regions();
     }
 
     explicit operator bool() const override {

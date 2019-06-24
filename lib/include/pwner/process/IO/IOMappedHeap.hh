@@ -10,7 +10,7 @@ class IOMappedHeap : public virtual IOMapped {
 public:
     explicit IOMappedHeap(const IO &io) {
         regions = io.regions;
-        sregions = io.sregions;
+        segments = io.segments;
 
         regions_mapped.clear();
         for (const Region& region : regions) {

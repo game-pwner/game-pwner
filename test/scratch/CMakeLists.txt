@@ -1,28 +1,13 @@
 find_package(Boost REQUIRED COMPONENTS iostreams filesystem)
 
 # ┌──────────────────────────────────────────────────────────────────┐
-#   TOOL_SCRATCH
+#   libscratch
 # └──────────────────────────────────────────────────────────────────┘
-set(TARGET TOOL_SCRATCH)
-add_executable(${TARGET} scratch.cc)
-set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
-target_use_debug(${TARGET})
-target_use_hardening(${TARGET} 2)
-target_use_warnings(${TARGET} 1)
-target_use_openmp(${TARGET})
-target_compile_options(${TARGET} PUBLIC
-        -O3
+set(TARGET libscratch)
+add_library(${TARGET} SHARED libscratch.cc)
+target_include_directories(${TARGET}
+        PUBLIC  ${CMAKE_CURRENT_SOURCE_DIR}
         )
-target_link_libraries(${TARGET} PUBLIC
-        pwner
-        criu
-        )
-
-# ┌──────────────────────────────────────────────────────────────────┐
-#   TOOL_SCRATCH2
-# └──────────────────────────────────────────────────────────────────┘
-set(TARGET TOOL_SCRATCH2)
-add_executable(${TARGET} scratch2.cc)
 set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
 target_use_debug(${TARGET})
 target_use_hardening(${TARGET} 2)
@@ -35,10 +20,45 @@ target_compile_options(${TARGET} PUBLIC
         -Wall -Wextra -Wpedantic
         )
 target_link_libraries(${TARGET} PUBLIC
-#        pwner
         stdc++fs
         Boost::iostreams
         Boost::filesystem
+        )
+
+# ┌──────────────────────────────────────────────────────────────────┐
+#   TOOL_SCRATCH
+# └──────────────────────────────────────────────────────────────────┘
+set(TARGET scratch)
+add_executable(${TARGET} scratch.cc)
+set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
+target_use_debug(${TARGET})
+target_use_hardening(${TARGET} 2)
+target_use_warnings(${TARGET} 1)
+target_use_openmp(${TARGET})
+target_compile_options(${TARGET} PUBLIC
+        -O3
+        )
+target_link_libraries(${TARGET} PUBLIC
+        libscratch
+        pwner
+        criu
+        )
+
+# ┌──────────────────────────────────────────────────────────────────┐
+#   TOOL_PredicateScanner
+# └──────────────────────────────────────────────────────────────────┘
+set(TARGET TOOL_PredicateScanner)
+add_executable(${TARGET} PredicateScanner.cc)
+set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
+target_use_debug(${TARGET})
+target_use_hardening(${TARGET} 2)
+target_use_warnings(${TARGET} 1)
+target_use_openmp(${TARGET})
+target_compile_options(${TARGET} PUBLIC
+        -O3
+        )
+target_link_libraries(${TARGET} PUBLIC
+        pwner
         )
 
 # ┌──────────────────────────────────────────────────────────────────┐

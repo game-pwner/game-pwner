@@ -18,12 +18,9 @@ int main(int argc, const char *argv[]) {
 
     std::string target = "FAKEMEM";
     std::string search_for = "60";
-    // Edata_type data_type = Edata_type::ANYNUMBER;
-    Edata_type data_type = Edata_type::INTEGER64;
-    std::vector<Cuservalue> uservalue;
-    uservalue.resize(1);
+    Cuservalue uservalue;
     uservalue[0].parse_uservalue_number(search_for);
-    Ematch_type match_type = Ematch_type::MATCHEQUALTO;
+    match_type_t match_type = match_type_t::MATCHEQUALTO;
 
     std::shared_ptr handler = std::make_shared<PROCESS::ProcessProcfs>(target);
     if (!handler)

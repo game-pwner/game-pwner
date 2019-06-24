@@ -30,22 +30,6 @@
 #include <pwner/process/IO/IOCRIU.hh>
 #include <pwner/process/IO/IOMappedHeap.hh>
 #include <pwner/process/IO/IOMappedFile.hh>
-//
-#include <pwner/scanner/Value.hh>
-#include <sys/uio.h>
-#include <iostream>
-#include <vector>
-#include <sstream>
-#include <fstream>
-#include <unistd.h>
-#include <cstring>
-#include <iomanip>
-#include <algorithm>
-#include <filesystem>
-#include <regex>
-#include <sys/stat.h>
-#include <sys/sysmacros.h>
-
 
 NAMESPACE_BEGIN(PWNER)
 NAMESPACE_BEGIN(PROCESS)

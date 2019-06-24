@@ -1,12 +1,13 @@
 #include <boost/test/auto_unit_test.hpp>
 #include <pwner/process/Process.hh>
 #include <pwner/wrapper/mm_vector.hh>
-#include <pwner/scanner/Matches.hh>
 #include <pwner/wrapper/temporary_file.hh>
 // #include <pwner/scanner/ValueScanner.hh>
 #include <ostream>
 #include <cmath>
 #include <boost/interprocess/allocators/allocator.hpp>
+#include <pwner/scanner/Value.hh>
+#include <pwner/scanner/ValueScanner.hh>
 
 
 struct constrable_check {
@@ -147,6 +148,45 @@ BOOST_AUTO_TEST_CASE(mm_vector_functional)
             BOOST_CHECK_EQUAL(memcmp(s.c_str(), "01234\0\0\0", s.size()), 0);
         }
     }
+}
+
+
+
+BOOST_AUTO_TEST_CASE(predicate_functional)
+{
+    using namespace std;
+    using namespace PWNER;
+
+    vector<string> t{"1", "-1", "0.1", "0x100000"};
+
+    for (const string& s : t) {
+        SCANNER::user_value uv{s};
+        cout<<"s: "<<s<<endl;
+        cout<<"u16: "<<uv.vars[0].u16<<endl;
+        cout<<"s64: "<<uv.vars[0].s64<<endl;
+        cout<<"f32: "<<uv.vars[0].f32<<endl;
+        cout<<"type: "<<uv.vars[0].type<<endl;
+        cout<<"-------"<<endl;
+        auto pred = SCANNER::get_predicate(SCANNER::match_type_t::MATCHEQUALTO, uv);
+        cout<<"pred: "<<typeid(pred).name()<<endl;
+        cout<<"================="<<endl;
+    }
+
+    // SCANNER::user_value value{};
+
+
+    // BOOST_REQUIRE_MESSAGE(sm_choose_scanroutine(data_type, match_type, uservalue.data(), reverse_endianness),
+    //                       "Is supported scan for current data type?");
+    //
+    // mem64_t mem{};
+    // mem.u64 = 0x1000;
+    // value_t *old_value = nullptr;
+    // flag flags;
+    //
+    // auto ss = sm_scan_routine(&mem, sizeof(mem), old_value, uservalue.data(), flags);
+
+    // BOOST_CHECK_EQUAL(ss, sizeof(mem));
+
 }
 
 BOOST_AUTO_TEST_SUITE_END() //scanner

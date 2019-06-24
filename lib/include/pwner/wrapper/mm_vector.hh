@@ -21,32 +21,32 @@ public:
     : mmap_allocator("") {}
 
     explicit mmap_allocator(const std::filesystem::path& filename) {
-        _M_mfp.path = filename;
-        _M_mfp.flags = boost::iostreams::mapped_file::readwrite;
+        m_mfp.path = filename;
+        m_mfp.flags = boost::iostreams::mapped_file::readwrite;
     }
 
     [[nodiscard]] T *allocate(size_t __n) noexcept {
-        if UNLIKELY(!_M_mf.is_open()) {
+        if UNLIKELY(!m_mf.is_open()) {
             if UNLIKELY(!std::filesystem::exists(_M_tf.path)) {
-                if (_M_mfp.path.empty()) {
+                if (m_mfp.path.empty()) {
                     _M_tf.create(__n);
-                    _M_mfp.path = _M_tf.path;
+                    m_mfp.path = _M_tf.path;
                 } else {
                     std::ofstream of(_M_tf.path);
                 }
             }
-            _M_mf.open(_M_mfp);
+            m_mf.open(m_mfp);
         }
-        _M_mf.resize(__n);
-        return reinterpret_cast<T *>(_M_mf.data());
+        m_mf.resize(__n);
+        return reinterpret_cast<T *>(m_mf.data());
     }
 
     void deallocate([[maybe_unused]] T *p, [[maybe_unused]] size_t n) noexcept {}
 
 private:
     temporary_file _M_tf;
-    boost::iostreams::mapped_file_params _M_mfp;
-    boost::iostreams::mapped_file _M_mf;
+    boost::iostreams::mapped_file_params m_mfp;
+    boost::iostreams::mapped_file m_mf;
 };
 template <class T, class U>
 bool operator==(const mmap_allocator<T>&, const mmap_allocator<U>&) { return true; }
@@ -59,15 +59,15 @@ bool operator!=(const mmap_allocator<T>&, const mmap_allocator<U>&) { return fal
  * would you have written thousands of lines to create mapped vector from scratch
  * and thousands more to make bindings for it?
  */
-template<typename _Tp>
-class mm_vector : public std::vector<_Tp, mmap_allocator<_Tp>> {
-    typedef std::vector<_Tp, mmap_allocator<_Tp>>   _Vector;
+template<typename T>
+class mm_vector : public std::vector<T, mmap_allocator<T>> {
+    typedef std::vector<T, mmap_allocator<T>>   vector;
 public:
-    typedef _Tp				            value_type;
-    typedef mmap_allocator<_Tp>			    allocator_type;
+    typedef T				        value_type;
+    typedef mmap_allocator<T>			allocator_type;
 
     explicit mm_vector(std::filesystem::path filename)
-    : _Vector(allocator_type(filename)), _M_filename(filename) {
+    : vector(allocator_type(filename)), m_filename(filename) {
         const size_t __n = std::filesystem::file_size(filename);
         this->_M_impl._M_start = this->_M_allocate(__n);
         this->_M_impl._M_finish = this->_M_impl._M_start + __n;
@@ -75,9 +75,13 @@ public:
     }
 
     ~mm_vector() {
-        std::filesystem::resize_file(_M_filename, this->size());
+        std::filesystem::resize_file(m_filename, this->size());
+    }
+
+    std::filesystem::path path() {
+        return m_filename;
     }
 
 private:
-    std::filesystem::path _M_filename;
+    std::filesystem::path m_filename;
 };

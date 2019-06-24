@@ -82,18 +82,40 @@ LIFT_ENUM_OP(^,^=)
 #endif
 
 
-static void oom_score_adj(ssize_t x) {
-    std::fstream f("/proc/self/oom_score_adj", std::ios::out);
-    if (f.is_open())
+static inline void oom_score_adj(ssize_t x) noexcept {
+    if (std::fstream f{"/proc/self/oom_score_adj", std::ios::out}; f.is_open())
         f << std::to_string(x);
 }
 
+using u8  = uint8_t;
+using s8  =  int8_t;
+using u16 = uint16_t;
+using s16 =  int16_t;
+using u32 = uint32_t;
+using s32 =  int32_t;
+using u64 = uint64_t;
+using s64 =  int64_t;
+using f32 = float;
+using f64 = double;
+
+union a64 {
+    ::u8  u8;
+    ::s8  s8;
+    ::u16 u16;
+    ::s16 s16;
+    ::u32 u32;
+    ::s32 s32;
+    ::u64 u64;
+    ::s64 s64;
+    ::f32 f32;
+    ::f64 f64;
+    ::u8 data[sizeof(::u64)];
+};
 
 /** @arg what: any number
  * @return: string number represented as hex */
 template <typename T, size_t value_size = sizeof(T), std::endian endianess = std::endian::native>
-std::string HEX(const T& value)
-{
+std::string HEX(const T& value) {
     using namespace std;
     auto *buffer = (uint8_t *)(&value);
     char converted[value_size * 2 + 1];

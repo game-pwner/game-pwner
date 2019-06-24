@@ -155,35 +155,35 @@ PYBIND11_MODULE(pwner, m) {
 
 
     // pwner/scanner/Value.hh
-    py::enum_<PWNER::Edata_type>(m, "Edata_type", py::arithmetic())
-            .value("ANYNUMBER",  PWNER::Edata_type::ANYNUMBER)
-            .value("ANYINTEGER", PWNER::Edata_type::ANYINTEGER)
-            .value("ANYFLOAT",   PWNER::Edata_type::ANYFLOAT)
-            .value("INTEGER8",   PWNER::Edata_type::INTEGER8)
-            .value("INTEGER16",  PWNER::Edata_type::INTEGER16)
-            .value("INTEGER32",  PWNER::Edata_type::INTEGER32)
-            .value("INTEGER64",  PWNER::Edata_type::INTEGER64)
-            .value("FLOAT32",    PWNER::Edata_type::FLOAT32)
-            .value("FLOAT64",    PWNER::Edata_type::FLOAT64)
-            .value("BYTEARRAY",  PWNER::Edata_type::BYTEARRAY)
-            .value("STRING",     PWNER::Edata_type::STRING)
+    py::enum_<PWNER::data_type_t>(m, "data_type_t", py::arithmetic())
+            .value("ANYNUMBER",  PWNER::data_type_t::ANYNUMBER)
+            .value("ANYINTEGER", PWNER::data_type_t::ANYINTEGER)
+            .value("ANYFLOAT",   PWNER::data_type_t::ANYFLOAT)
+            .value("INTEGER8",   PWNER::data_type_t::INTEGER8)
+            .value("INTEGER16",  PWNER::data_type_t::INTEGER16)
+            .value("INTEGER32",  PWNER::data_type_t::INTEGER32)
+            .value("INTEGER64",  PWNER::data_type_t::INTEGER64)
+            .value("FLOAT32",    PWNER::data_type_t::FLOAT32)
+            .value("FLOAT64",    PWNER::data_type_t::FLOAT64)
+            .value("BYTEARRAY",  PWNER::data_type_t::BYTEARRAY)
+            .value("STRING",     PWNER::data_type_t::STRING)
             ;
 
-    py::enum_<PWNER::Ematch_type>(m, "Ematch_type", py::arithmetic())
-            .value("MATCHANY",         PWNER::Ematch_type::MATCHANY)
-            .value("MATCHEQUALTO",     PWNER::Ematch_type::MATCHEQUALTO)
-            .value("MATCHNOTEQUALTO",  PWNER::Ematch_type::MATCHNOTEQUALTO)
-            .value("MATCHGREATERTHAN", PWNER::Ematch_type::MATCHGREATERTHAN)
-            .value("MATCHLESSTHAN",    PWNER::Ematch_type::MATCHLESSTHAN)
-            .value("MATCHRANGE",       PWNER::Ematch_type::MATCHRANGE)
-            .value("MATCHEXCLUDE",     PWNER::Ematch_type::MATCHEXCLUDE)
-            .value("MATCHUPDATE",      PWNER::Ematch_type::MATCHUPDATE)
-            .value("MATCHNOTCHANGED",  PWNER::Ematch_type::MATCHNOTCHANGED)
-            .value("MATCHCHANGED",     PWNER::Ematch_type::MATCHCHANGED)
-            .value("MATCHINCREASED",   PWNER::Ematch_type::MATCHINCREASED)
-            .value("MATCHDECREASED",   PWNER::Ematch_type::MATCHDECREASED)
-            .value("MATCHINCREASEDBY", PWNER::Ematch_type::MATCHINCREASEDBY)
-            .value("MATCHDECREASEDBY", PWNER::Ematch_type::MATCHDECREASEDBY)
+    py::enum_<PWNER::match_type_t>(m, "match_type_t", py::arithmetic())
+            .value("MATCHANY",         PWNER::match_type_t::MATCHANY)
+            .value("MATCHEQUALTO",     PWNER::match_type_t::MATCHEQUALTO)
+            .value("MATCHNOTEQUALTO",  PWNER::match_type_t::MATCHNOTEQUALTO)
+            .value("MATCHGREATERTHAN", PWNER::match_type_t::MATCHGREATERTHAN)
+            .value("MATCHLESSTHAN",    PWNER::match_type_t::MATCHLESSTHAN)
+            .value("MATCHRANGE",       PWNER::match_type_t::MATCHRANGE)
+            .value("MATCHEXCLUDE",     PWNER::match_type_t::MATCHEXCLUDE)
+            .value("MATCHUPDATE",      PWNER::match_type_t::MATCHUPDATE)
+            .value("MATCHNOTCHANGED",  PWNER::match_type_t::MATCHNOTCHANGED)
+            .value("MATCHCHANGED",     PWNER::match_type_t::MATCHCHANGED)
+            .value("MATCHINCREASED",   PWNER::match_type_t::MATCHINCREASED)
+            .value("MATCHDECREASED",   PWNER::match_type_t::MATCHDECREASED)
+            .value("MATCHINCREASEDBY", PWNER::match_type_t::MATCHINCREASEDBY)
+            .value("MATCHDECREASEDBY", PWNER::match_type_t::MATCHDECREASEDBY)
             ;
 
     py::enum_<PWNER::flag_t>(m, "flag_t", py::arithmetic())
@@ -217,11 +217,11 @@ PYBIND11_MODULE(pwner, m) {
             ;
 
     py::class_<PWNER::flag, bitmask::bitmask<PWNER::flag_t>>(m, "flag")
-            .def(py::init<const PWNER::Edata_type&>())
+            .def(py::init<const PWNER::data_type_t&>())
             // static methods
-            .def_static("convert",   static_cast<PWNER::flag (*)(const PWNER::Edata_type&)>(&PWNER::flag::convert), py::arg("dt"))
+            .def_static("convert",   static_cast<PWNER::flag (*)(const PWNER::data_type_t&)>(&PWNER::flag::convert), py::arg("dt"))
             // methods
-            .def("memlength", static_cast<size_t (PWNER::flag::*)(const PWNER::Edata_type&) const>(&PWNER::flag::memlength), py::arg("scan_data_type"))
+            .def("memlength", static_cast<size_t (PWNER::flag::*)(const PWNER::data_type_t&) const>(&PWNER::flag::memlength), py::arg("scan_data_type"))
             .def("str",       static_cast<std::string (PWNER::flag::*)() const>(&PWNER::flag::str))
             ;
 
@@ -303,9 +303,9 @@ PYBIND11_MODULE(pwner, m) {
             .def("parse_uservalue_string", &PWNER::Cuservalue::parse_uservalue_string, py::arg("text"))
             ;
 
-    m.def("string_to_uservalue", [](const PWNER::Edata_type &data_type,
+    m.def("string_to_uservalue", [](const PWNER::data_type_t &data_type,
                                     const std::string &text) {
-        PWNER::Ematch_type match_type;
+        PWNER::match_type_t match_type;
         std::vector<PWNER::Cuservalue> uservalue;
         PWNER::string_to_uservalue(data_type, text, match_type, uservalue);
         return std::make_tuple(match_type, uservalue);
@@ -319,16 +319,16 @@ PYBIND11_MODULE(pwner, m) {
             .def(py::init<PWNER::PROCESS::Process&>())
             .def("scan_regions", [](PWNER::ScannerSequential& self,
                                     std::vector<PWNER::value_t>& writing_matches,
-                                    const PWNER::Edata_type& data_type,
+                                    const PWNER::data_type_t& data_type,
                                     const std::vector<PWNER::Cuservalue> uservalue,
-                                    const PWNER::Ematch_type& match_type) {
+                                    const PWNER::match_type_t& match_type) {
                 return self.scan_regions(writing_matches,data_type,uservalue.data(),match_type);
             }, py::arg("writing_matches"), py::arg("data_type"), py::arg("uservalue"), py::arg("match_type"))
             .def("scan_recheck", [](PWNER::ScannerSequential& self,
                                     std::vector<PWNER::value_t>& writing_matches,
-                                    const PWNER::Edata_type& data_type,
+                                    const PWNER::data_type_t& data_type,
                                     const std::vector<PWNER::Cuservalue> uservalue,
-                                    const PWNER::Ematch_type& match_type) {
+                                    const PWNER::match_type_t& match_type) {
                 return self.scan_recheck(writing_matches,data_type,uservalue.data(),match_type);
             }, py::arg("writing_matches"), py::arg("data_type"), py::arg("uservalue"), py::arg("match_type"))
             .def("scan_update",  &PWNER::ScannerSequential::scan_update, py::arg("writing_matches"))
