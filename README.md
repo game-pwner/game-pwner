@@ -22,7 +22,7 @@ You can also create [trainers](./trainer.cc). Even with Python.
 - [x] Linux
   - [x] Process' handler
     - [x] Read and write any value
-    - [x] Value scanner
+    - [x] type scanner
     - [ ] Pattern scanner
     - [x] Pointer scanner
       - [x] Forward ~~> (support scanning for multiple addresses)
@@ -41,7 +41,7 @@ You can also create [trainers](./trainer.cc). Even with Python.
 
 ## Support
 
-### Arch support
+### arch support
 But who uses 32 bit machine?
 
 - [x] 64 bit -> 64 bit targets

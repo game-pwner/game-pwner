@@ -1,5 +1,5 @@
 
-set(TARGET TOOL_AC)
+set(TARGET TOOL_ANTIDEBUG)
 add_executable(${TARGET} main.cc)
 # todo[high] better to replace set_property with set_target_properties everywhere
 #set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
