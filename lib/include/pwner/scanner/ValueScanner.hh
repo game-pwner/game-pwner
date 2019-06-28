@@ -34,15 +34,48 @@
 NAMESPACE_BEGIN(PWNER)
 NAMESPACE_BEGIN(SCANNER)
 
+NAMESPACE_BEGIN(predicate)
+    enum class type {
+        VARIABLE,
+        VLA,      // variable-length array
+        STRING,   // regex matcher
+    };
 
-using predicate_t = flag(*)(const a64 *mem,
-                            size_t size,
-                            const match *old_match,
-                            const user_value& user_value);
+    enum class variable_predicate {
+        ANY,
+        EQUAL_TO,
+        NOT_EQUAL_TO,
+        GRATER_THAN,
+        LESS_THAN,
+        GREATER_EQUAL_THAN,
+        LESS_EQUAL_THAN,
+        IN_RANGE,
+        NOT_IN_RANGE,
+        CHANGED,
+        NOT_CHANGED,
+        INCREASED,
+        DECREASED,
+        INCREASED_BY,
+        DECREASED_BY,
+    };
 
-predicate_t get_predicate(match_type_t mt,
-                          const user_value& user_value);
+    // enum class string_predicate {
+    //     EQUAL_TO_ASCII,
+    //     EQUAL_TO_UTF8,
+    //     EQUAL_TO_UTF16,
+    //     EQUAL_TO_UTF32,
+    //     MAX,
+    // };
 
+    using predicate_t = flag(*)(const a64 *mem,
+                                size_t size,
+                                const match *old_match,
+                                const user_value& user_value);
+
+    predicate_t get_variable_predicate(const user_value& user_value, variable_predicate e);
+    predicate_t get_vla_predicate(const user_value& user_value);
+    predicate_t get_string_predicate(const user_value& user_value);
+NAMESPACE_END(predicate)
 
 
 class ScannerSequential {
@@ -57,7 +90,7 @@ public:
      */
     bool scan_regions(std::vector<match>& writing_matches,
                       const user_value& uservalue,
-                      predicate_t pred,
+                      predicate::predicate_t pred,
                       size_t step = 1) {
         for (const PROCESS::Region& region : proc.regions) {
             size_t region_beg = region.address;
@@ -67,7 +100,7 @@ public:
                 ::PWNER::SCANNER::IOCached cachedReader{proc};
                 for(uintptr_t reg_pos = region_beg; reg_pos < region_end; reg_pos += step) {
                     a64 mem{};
-                    flag type = uservalue.vars[0].type;
+                    // flag type = uservalue.vars[0].type;
                     uint64_t copied = cachedReader.read(reg_pos, &mem, sizeof(a64));
                     // uint64_t copied = proc.read(reg_pos, &mem, sizeof(a64));
                     if UNLIKELY(copied == PROCESS::IO::npos) {
@@ -76,7 +109,7 @@ public:
                     }
 
                     /* check if we have a match */
-                    if (type &= pred(&mem, copied, nullptr, uservalue)) {
+                    if (flag type = pred(&mem, copied, nullptr, uservalue)) {
                         writing_matches.emplace_back(reg_pos, mem, type);
                     }
                 }
@@ -93,7 +126,7 @@ public:
      */
     bool matches_update(std::vector<match>& writing_matches,
                         const user_value& uservalue,
-                        predicate_t pred) {
+                        predicate::predicate_t pred) {
         IOCached reader(proc);
 
         // Invalidate cache to get fresh values

@@ -46,44 +46,6 @@
 NAMESPACE_BEGIN(PWNER)
 NAMESPACE_BEGIN(SCANNER)
 
-// enum class data_type_t : uint16_t {
-//     ANYNUMBER,              /* ANYINTEGER or ANYFLOAT */
-//     ANYINTEGER,             /* INTEGER of whatever width */
-//     ANYFLOAT,               /* FLOAT of whatever width */
-//     INTEGER8,
-//     INTEGER16,
-//     INTEGER32,
-//     INTEGER64,
-//     FLOAT32,
-//     FLOAT64,
-//     BYTEARRAY,
-//     STRING
-// };
-// BITMASK_DEFINE_VALUE_MASK(data_type_t, 0xffff)
-//
-enum class match_type_t
-{
-    MATCHANY,                /* for snapshot */
-    /* following: compare with a given value */
-    MATCHEQUALTO,
-    MATCHNOTEQUALTO,
-    MATCHGREATERTHAN,
-    MATCHLESSTHAN,
-    MATCHRANGE,
-    MATCHEXCLUDE,
-    /* following: compare with the old value */
-    MATCHUPDATE,
-    MATCHNOTCHANGED,
-    MATCHCHANGED,
-    MATCHINCREASED,
-    MATCHDECREASED,
-    /* following: compare with both given value and old value */
-    MATCHINCREASEDBY,
-    MATCHDECREASEDBY
-};
-
-
-
 /* some routines for working with value_t structures */
 
 /* match_flags: they MUST be implemented as an `uint16_t`, the `__packed__` ensures so.
@@ -327,15 +289,26 @@ public:
         }
     };
 
-    std::vector<values> vars;
-
     explicit user_value() {}
 
     explicit user_value(const std::string& s, flag t = flag_t::a64) {
+        /*
+         * 123 -- value, a64
+         * 1.2 -- value, f
+         * 123i8 -- value, i8
+         * 0x1488i64 -- value, i8
+         * 12 A0 ?? ?? FF FF -- VLA with wildcards
+         * {1.2, 5i64} -- VLA
+         * "123" -- string
+         * "\xff\x12\x00" -- string
+         */
         vars.emplace_back();
         vars[0].from_string(s);
         vars[0].type &= t;
     }
+
+public:
+    std::vector<values> vars;
 };
 
 

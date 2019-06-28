@@ -30,15 +30,14 @@ int main(int argc, const char *argv[]) {
         <<endl;
 
     std::string s = "1337";
-    SCANNER::match_type_t mt = SCANNER::match_type_t::MATCHEQUALTO;
     // SCANNER::flag flag_wanted{SCANNER::flag_t::i8|SCANNER::flag_t::i16|SCANNER::flag_t::i32|SCANNER::flag_t::i64};
-    SCANNER::flag flag_wanted{SCANNER::flag_t::i16};
+    SCANNER::flag flag_wanted{SCANNER::flag_t::i64};
     SCANNER::user_value uv{s, flag_wanted};
     SCANNER::ScannerSequential scanner{proc};
     // std::vector<SCANNER::match, mmap_allocator<SCANNER::match>> matches;
     std::vector<SCANNER::match> matches;
 
-    SCANNER::predicate_t pred = SCANNER::get_predicate(mt, uv);
+    SCANNER::predicate::predicate_t pred = SCANNER::predicate::get_variable_predicate(uv, SCANNER::predicate::variable_predicate::EQUAL_TO);
     {
         Timer __t{"scanning"};
         scanner.scan_regions(matches, uv, pred);

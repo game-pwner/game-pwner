@@ -66,7 +66,7 @@ target_link_libraries(${TARGET} PUBLIC
 ##target_use_openacc(${TARGET})
 #target_compile_options(${TARGET} PUBLIC ${OpenACC_CXX_FLAGS})
 #target_link_libraries(${TARGET} PUBLIC -fopenacc)
-#target_use_hardening(${TARGET} 2)
+#target_use_hardening(${TARGET} 0)
 #target_compile_options(${TARGET} PUBLIC
 #        -O3
 #        )
@@ -76,7 +76,7 @@ target_link_libraries(${TARGET} PUBLIC
 #    add_executable(${TARGET} openacc.cc)
 #    set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
 #    target_use_openacc(${TARGET})
-#    target_use_hardening(${TARGET} 2)
+#    target_use_hardening(${TARGET} 0)
 #    target_compile_options(${TARGET} PUBLIC
 #            -O3
 #            )
@@ -86,7 +86,7 @@ target_link_libraries(${TARGET} PUBLIC
 #add_executable(${TARGET} get_region_address.cc)
 #set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
 #target_use_openmp(${TARGET})
-##target_use_hardening(${TARGET} 2)
+##target_use_hardening(${TARGET} 0)
 #target_compile_options(${TARGET} PUBLIC
 #        -O3
 #        )

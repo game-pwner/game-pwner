@@ -31,7 +31,7 @@ set_target_properties(pwner PROPERTIES
         PWN_DEBUG        True
         PWN_SHARED_LIBS  False
         PWN_WARNINGS     1
-        PWN_HARDENING    2
+        PWN_HARDENING    0
         PWN_OPENMP       True
         )
 pwn_target_properties(pwner)

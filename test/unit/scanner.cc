@@ -96,6 +96,10 @@ BOOST_AUTO_TEST_CASE(mmap_allocator_functional)
                                [](char x) -> bool { return std::isdigit(x); }),
                 v.end());
         BOOST_CHECK_EQUAL(memcmp(v.data(), "ab", v.size()), 0);
+
+        // FIXME[critical]: если это не решить, то не будет никаких сканеров
+        v.resize(512*8);
+        v.emplace_back(1);
     }
 
     /// check constrable_check
@@ -167,8 +171,8 @@ BOOST_AUTO_TEST_CASE(predicate_functional)
         cout<<"f32: "<<uv.vars[0].f32<<endl;
         cout<<"type: "<<uv.vars[0].type<<endl;
         cout<<"-------"<<endl;
-        auto pred = SCANNER::get_predicate(SCANNER::match_type_t::MATCHEQUALTO, uv);
-        cout<<"pred: "<<typeid(pred).name()<<endl;
+        // auto pred = SCANNER::get_predicate(SCANNER::match_type_t::MATCHEQUALTO, uv);
+        // cout<<"pred: "<<typeid(pred).name()<<endl;
         cout<<"================="<<endl;
     }
 

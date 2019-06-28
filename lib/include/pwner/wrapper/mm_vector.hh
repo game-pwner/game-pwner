@@ -4,11 +4,11 @@
 #include <filesystem>
 #include <stdio.h>
 #include <boost/iostreams/device/mapped_file.hpp>
-#include <boost/filesystem.hpp>
 #include <pwner/wrapper/temporary_file.hh>
 
 
-/**
+/*
+ * FIXME: какого хуя оно не работает после 512 даблов?
  * mmap_allocator: works as expected to regular allocator.
  * allocated memory will be stored on disk, not in RAM.
  */
@@ -48,8 +48,10 @@ private:
     boost::iostreams::mapped_file_params m_mfp;
     boost::iostreams::mapped_file m_mf;
 };
+
 template <class T, class U>
 bool operator==(const mmap_allocator<T>&, const mmap_allocator<U>&) { return true; }
+
 template <class T, class U>
 bool operator!=(const mmap_allocator<T>&, const mmap_allocator<U>&) { return false; }
 
