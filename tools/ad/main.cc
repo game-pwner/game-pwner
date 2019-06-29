@@ -1,91 +1,93 @@
 #include <iostream>
 #include <sstream>
+#include <iterator>
 #include <zconf.h>
 #include "antidebug.hh"
 
 
-std::string custom_visual(ssize_t x) {
-    std::ostringstream ss;
-    switch (x) {
-        case -1: ss<<"\033[1;32m"<<"No"<<"\033[0m"; break;
-        case 0: ss<<"\033[1;33m"<<"Unknown"<<"\033[0m"; break;
-        case 1: ss<<"\033[1;31m"<<"Yes"<<"\033[0m"; break;
-    }
-
-    return ss.str();
-}
-
-
-class AC_Cached {
+class antidebug_status {
 public:
-    AC_Cached(antidebug ac)
-            : ac(ac), is_ptrace(ac.is_ptrace()), is_vdso(ac.is_vdso()), is_noaslr(ac.is_noaslr()), is_env(ac.is_env()),
-              is_ld_preload(ac.is_ld_preload()), is_parent_debugger(ac.is_parent_debugger()), is_ldhook(ac.is_ldhook()),
-              is_nearheap(ac.is_nearheap()), is_breakpoint(ac.is_breakpoint()), is_valgrind(ac.is_valgrind()),
-              is_more_streams(ac.is_more_streams()), is_perf(ac.is_perf()) { }
+    struct status {
+        antidebug::result is_ptrace;
+        antidebug::result is_vdso;
+        antidebug::result is_noaslr;
+        antidebug::result is_env;
+        antidebug::result is_ld_preload;
+        antidebug::result is_parent_debugger;
+        antidebug::result is_ldhook;
+        antidebug::result is_nearheap;
+        antidebug::result is_valgrind;
+        antidebug::result is_perf;
+        std::vector<uintptr_t> breakpoints;
 
-    ssize_t is_changed() {
+        explicit status(antidebug::result r)
+        : is_ptrace(r), is_vdso(r), is_noaslr(r), is_env(r),
+          is_ld_preload(r), is_parent_debugger(r), is_ldhook(r),
+          is_nearheap(r), breakpoints(0), is_valgrind(r),
+          is_perf(r) {}
+
+        status()
+        : is_ptrace(antidebug::is_ptrace()), is_vdso(antidebug::is_vdso()), is_noaslr(antidebug::is_noaslr()), is_env(antidebug::is_env()),
+          is_ld_preload(antidebug::is_ld_preload()), is_parent_debugger(antidebug::is_parent_debugger()), is_ldhook(antidebug::is_ldhook()),
+          is_nearheap(antidebug::is_nearheap()), breakpoints(antidebug::get_breakpoints()), is_valgrind(antidebug::is_valgrind()),
+          is_perf(antidebug::is_perf()) {}
+
+        friend std::ostream& operator<<(std::ostream& os, const status& s) {
+            os << "is_ptrace: " << s.is_ptrace << "\n"
+               << "is_vdso: " << s.is_vdso << "\n"
+               << "is_noaslr: " << s.is_noaslr  << "\n"
+               << "is_env: " << s.is_env << "\n"
+               << "is_ld_preload: " << s.is_ld_preload  << "\n"
+               << "is_parent_debugger: " << s.is_parent_debugger  << "\n"
+               << "is_ldhook: " << s.is_ldhook << "\n"
+               << "is_nearheap: " << s.is_nearheap  << "\n"
+               << "is_valgrind: " << s.is_valgrind << "\n"
+               << "is_perf: " << s.is_perf << "\n"
+               << "breakpoints: ";
+            for (auto& a : s.breakpoints) {os << (void*)(a) << ","; } os<<"\b";
+            return os;
+        }
+    };
+
+    antidebug_status() = default;
+
+    void update_and_print(std::ostream& os) {
+        auto n = status{};
         if (0);
-        else if (is_ptrace          != ac.is_ptrace())     return 1;
-        else if (is_vdso            != ac.is_vdso())       return 1;
-        else if (is_noaslr          != ac.is_noaslr())     return 1;
-        else if (is_env             != ac.is_env())        return 1;
-        else if (is_ld_preload      != ac.is_ld_preload()) return 1;
-        else if (is_parent_debugger != ac.is_parent_debugger()) return 1;
-        else if (is_ldhook          != ac.is_ldhook())     return 1;
-        else if (is_nearheap        != ac.is_nearheap())   return 1;
-        else if (is_breakpoint      != ac.is_breakpoint()) return 1;
-        else if (is_valgrind        != ac.is_valgrind())   return 1;
-        else if (is_more_streams    != ac.is_more_streams()) return 1;
-        else if (is_perf            != ac.is_perf())       return 1;
-        return -1;
+        else if (last.is_ptrace          != n.is_ptrace)     { diff.is_ptrace = antidebug::result::yes;               os << "is_ptrace changed from: " << last.is_ptrace << " to: "<<n.is_ptrace << "\n"; }
+        else if (last.is_vdso            != n.is_vdso)       { diff.is_vdso = antidebug::result::yes;                 os << "is_vdso changed from: " << last.is_vdso << " to: "<<n.is_vdso << "\n"; }
+        else if (last.is_noaslr          != n.is_noaslr)     { diff.is_noaslr = antidebug::result::yes;               os << "is_noaslr changed from: " << last.is_noaslr << " to: "<<n.is_noaslr << "\n"; }
+        else if (last.is_env             != n.is_env)        { diff.is_env = antidebug::result::yes;                  os << "is_env changed from: " << last.is_env << " to: "<<n.is_env << "\n"; }
+        else if (last.is_ld_preload      != n.is_ld_preload) { diff.is_ld_preload = antidebug::result::yes;           os << "is_ld_preload changed from: " << last.is_ld_preload << " to: "<<n.is_ld_preload << "\n"; }
+        else if (last.is_parent_debugger != n.is_parent_debugger) { diff.is_parent_debugger = antidebug::result::yes; os << "is_parent_debugger changed from: " << last.is_parent_debugger << " to: "<<n.is_parent_debugger << "\n"; }
+        else if (last.is_ldhook          != n.is_ldhook)     { diff.is_ldhook = antidebug::result::yes;               os << "is_ldhook changed from: " << last.is_ldhook << " to: "<<n.is_ldhook << "\n"; }
+        else if (last.is_nearheap        != n.is_nearheap)   { diff.is_nearheap = antidebug::result::yes;             os << "is_nearheap changed from: " << last.is_nearheap << " to: "<<n.is_nearheap << "\n"; }
+        else if (last.is_valgrind        != n.is_valgrind)   { diff.is_valgrind = antidebug::result::yes;             os << "is_valgrind changed from: " << last.is_valgrind << " to: "<<n.is_valgrind << "\n"; }
+        else if (last.is_perf            != n.is_perf)       { diff.is_perf = antidebug::result::yes;                 os << "is_perf changed from: " << last.is_perf << " to: "<<n.is_perf << "\n"; }
+        else if (last.breakpoints        != n.breakpoints)   { os << "new breakpoints: "; for (auto& a : n.breakpoints) {os << (void*)(a) << ","; } os << "\b\n"; }
+        last = n;
     }
 
 public:
-    antidebug ac;
-    const ssize_t is_ptrace;
-    const ssize_t is_vdso;
-    const ssize_t is_noaslr;
-    const ssize_t is_env;
-    const ssize_t is_ld_preload;
-    const ssize_t is_parent_debugger;
-    const ssize_t is_ldhook;
-    const ssize_t is_nearheap;
-    const ssize_t is_breakpoint;
-    const ssize_t is_valgrind;
-    const ssize_t is_more_streams;
-    const ssize_t is_perf;
+    const status init;
+    status diff{antidebug::result::no};
+    status last;
 };
 
+void dummy() {
+    std::cout<<" \b"<<std::flush;
+}
 
-int main(int argc, char *argv[]) {
+int main(int argc, char **argv) {
     using namespace std;
     cout<<"pid: "<<getpid()<<endl;
     //https://github.com/yellowbyte/reverse-engineering-reference-manual/blob/master/contents/anti-analysis/Anti-Debugging.md
 
-    antidebug ac;
-    AC_Cached acc(ac);
-    acc.is_changed();
-
-    while (true) {
-        cout << "is_ptrace: " << custom_visual(ac.is_ptrace()) << endl;
-        cout << "is_vdso: " << custom_visual(ac.is_vdso()) << endl;
-        cout << "is_noaslr: " << custom_visual(ac.is_noaslr()) << endl;
-        cout << "is_env: " << custom_visual(ac.is_env()) << endl;
-        cout << "is_ld_preload: " << custom_visual(ac.is_ld_preload()) << endl;
-        cout << "is_parent_debugger: " << custom_visual(ac.is_parent_debugger()) << endl;
-        cout << "is_ldhook: " << custom_visual(ac.is_ldhook()) << endl;
-        cout << "is_nearheap: " << custom_visual(ac.is_nearheap()) << endl;
-        cout << "is_breakpoint: " << custom_visual(ac.is_breakpoint()) << endl;
-        cout << "is_valgrind: " << custom_visual(ac.is_valgrind()) << endl;
-        cout << "is_more_streams: " << custom_visual(ac.is_more_streams()) << endl;
-        cout << "is_perf: " << custom_visual(ac.is_perf()) << endl;
-        // if (acc.is_changed() != -1) {
-        //     clog<<"Banned"<<endl;
-        //     return 1;
-        // }
-        sleep(1);
+    antidebug_status ads;
+    std::cout<<ads.init<<endl;
+    for(size_t i = 0; i<size_t(-1); i++) {
+        ads.update_and_print(std::cout);
+        usleep(100000);
     }
-
-    return 0;
+    dummy();
 }

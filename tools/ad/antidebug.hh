@@ -41,6 +41,11 @@
 #error "Compiling for unknown architecture. Only x86(-64) and ARMV[78] are supported."
 #endif
 
+extern unsigned char *_start;
+extern unsigned char *__etext;
+
+extern long _r_debug; // /usr/lib/ld-2.29.so
+
 namespace antidebug {
 
 enum result {
@@ -49,10 +54,14 @@ enum result {
     no,
 };
 
-extern unsigned char *_start;
-extern unsigned char *__etext;
-
-extern long _r_debug; // /usr/lib/ld-2.29.so
+std::ostream& operator<<(std::ostream& os, const result& r) {
+    switch (r) {
+        case result::no: os<<"\033[1;32m"<<"No"<<"\033[0m"; break;
+        case result::none: os<<"\033[1;33m"<<"Unknown"<<"\033[0m"; break;
+        case result::yes: os<<"\033[1;31m"<<"Yes"<<"\033[0m"; break;
+    }
+    return os;
+}
 
 class arch {
 public:
@@ -169,20 +178,22 @@ public:
 arch this_arch;
 
 /* Is Address space layout randomization active */
-ssize_t aslr_active() {
-    std::fstream fp("/proc/sys/kernel/randomize_va_space", std::ios::in);
-    if (!fp.good())
-        return result::no;
-    uint64_t aslr_state;
-    fp >> aslr_state;
-    if (aslr_state == 0)
-        return result::no;
-    return result::yes;
-}
+namespace details {
+    result aslr_active() {
+        std::fstream fp("/proc/sys/kernel/randomize_va_space", std::ios::in);
+        if (!fp.good())
+            return result::no;
+        uint64_t aslr_state;
+        fp >> aslr_state;
+        if (aslr_state == 0)
+            return result::no;
+        return result::yes;
+    }
+} //namespace details
 
 
 /* try ptrace self */
-ssize_t is_ptrace() {
+result is_ptrace() {
     if (ptrace(PTRACE_TRACEME, 0, nullptr, nullptr) == -1) {
         return result::yes;
     }
@@ -192,7 +203,7 @@ ssize_t is_ptrace() {
 
 
 /* measure distance of vdso and stack */ // TODO not tested
-ssize_t is_vdso() {
+result is_vdso() {
     unsigned long tos;
     unsigned long vdso = getauxval(AT_SYSINFO_EHDR);
 
@@ -206,7 +217,7 @@ ssize_t is_vdso() {
         return result::none;
     }
 
-    if (aslr_active() != 1) {
+    if (details::aslr_active() != result::yes) {
         /* No ASLR on this machine. Unknown result */
         return result::none;
     }
@@ -221,7 +232,7 @@ ssize_t is_vdso() {
 /* Program headers are close enough to the beginning of the ELF to be
  * representative for the ELF's base address. We use ld_base because it's
  * the simplest way to obtain an address of some shared library. */ // TODO not tested
-ssize_t is_noaslr() {
+result is_noaslr() {
     unsigned long elf = getauxval(AT_PHDR) & ~((unsigned long) getpagesize() - 1);
     unsigned long ld = getauxval(AT_BASE) & ~((unsigned long) getpagesize() - 1);
     struct utsname utsname;
@@ -230,7 +241,7 @@ ssize_t is_noaslr() {
         return result::none;
     }
 
-    if (aslr_active() != 1) {
+    if (details::aslr_active() != result::yes) {
         /* No ASLR on this machine. Unknown result */
         return result::none;
     }
@@ -281,7 +292,7 @@ ssize_t is_noaslr() {
 
 
 /* gdb does not provide env variables LINES and COLUMNS */
-ssize_t is_env() {
+result is_env() {
     if (getenv("LINES") || getenv("COLUMNS"))
         return result::yes; /* Debatable */
     return result::no;
@@ -289,13 +300,13 @@ ssize_t is_env() {
 
 
 /* check if something preloaded */
-ssize_t is_ld_preload() {
+result is_ld_preload() {
     if (getenv("LD_PRELOAD"))
         return result::yes;
     return result::no;
 }
 
-ssize_t is_parent_debugger() {
+result is_parent_debugger() {
     //todo[low]: recursive
     pid_t ppid = getppid();
     std::error_code ec;
@@ -313,7 +324,7 @@ ssize_t is_parent_debugger() {
     return result::no;
 }
 
-ssize_t is_ldhook() {
+result is_ldhook() {
     // https://github.com/lattera/glibc/blob/master/elf/dl-debug.c
     int ret = memcmp((void *) *(&_r_debug + 2),
                      &this_arch.ret_ldhook()[0],
@@ -325,7 +336,7 @@ ssize_t is_ldhook() {
 
 
 /* GDB relocates the heap to the end of the bss section */
-ssize_t is_nearheap() {
+result is_nearheap() {
     static unsigned char bss;
     std::vector<uint8_t> probe;
     probe.resize(0x10);
@@ -337,7 +348,7 @@ ssize_t is_nearheap() {
     return result::no;
 }
 
-ssize_t is_breakpoint() {
+result is_breakpoint() {
     char *start = reinterpret_cast<char *>(&_start);
     char *end =  reinterpret_cast<char *>(&__etext);
     while (start != end) {
@@ -362,7 +373,7 @@ std::vector<uintptr_t> get_breakpoints() {
     return result;
 }
 
-ssize_t is_valgrind() {
+result is_valgrind() {
     /// malloc по-дефолту в [stack], под валгриндом - кое-где
     // TODO[windows]: Virtualalloc под виндярой
     using namespace std;
@@ -396,7 +407,7 @@ ssize_t is_valgrind() {
     return result::yes;
 }
 
-ssize_t is_perf() {
+result is_perf() {
     return result::none;
 } // TODO: [1] perf detection (КАК?), [2] vtune detection
 
