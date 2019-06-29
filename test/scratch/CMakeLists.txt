@@ -48,7 +48,7 @@ target_link_libraries(${TARGET} PUBLIC
 #   TOOL_PredicateScanner
 # └──────────────────────────────────────────────────────────────────┘
 set(TARGET TOOL_PredicateScanner)
-add_executable(${TARGET} PredicateScanner.cc)
+add_executable(${TARGET} MemoryIterator.cc)
 set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
 target_use_debug(${TARGET})
 target_use_hardening(${TARGET} 0)
@@ -65,7 +65,7 @@ target_link_libraries(${TARGET} PUBLIC
 #   TOOL_ValueScannerSequential
 # └──────────────────────────────────────────────────────────────────┘
 set(TARGET TOOL_ValueScannerSequential)
-add_executable(${TARGET} ValueScannerSequential.cc)
+add_executable(${TARGET} ValueScanner.cc)
 set_property(TARGET ${TARGET} PROPERTY CXX_STANDARD 20)
 target_use_debug(${TARGET})
 target_use_hardening(${TARGET} 0)

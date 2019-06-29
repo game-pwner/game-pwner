@@ -7,7 +7,7 @@
 #include <chrono>
 #include <pwner/scanner/Value.hh>
 #include <pwner/process/Process.hh>
-#include <pwner/scanner/PredicateScanner.hh>
+#include <pwner/scanner/MemoryIterator.hh>
 #include <pwner/wrapper/mm_vector.hh>
 #include <pwner/scanner/ValueScanner.hh>
 
@@ -41,6 +41,17 @@ int main(int argc, const char *argv[]) {
     {
         Timer __t{"scanning"};
         scanner.scan_regions(matches, uv, pred);
+    }
+    cout<<"matches: size: "<<matches.size()<<endl;
+
+    for(size_t i=0; i < std::min(matches.size(), size_t{10}); i++) {
+        auto& m = matches[i];
+        cout<<"m: "<<HEX(m.address)<<", "<<HEX(m.value.u64)<<", "<<m.type<<" \t"<<*proc.get_region(m.address)<<endl;
+    }
+
+    {
+        Timer __t{"rescanning"};
+        scanner.matches_update(matches, uv, pred);
     }
     cout<<"matches: size: "<<matches.size()<<endl;
 

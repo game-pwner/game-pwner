@@ -305,10 +305,12 @@ public:
         vars.emplace_back();
         vars[0].from_string(s);
         vars[0].type &= t;
+        least = 8; // since it is only one a64 value
     }
 
 public:
     std::vector<values> vars;
+    size_t least;
 };
 
 

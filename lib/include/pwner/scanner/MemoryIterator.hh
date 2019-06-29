@@ -82,12 +82,28 @@ public:
         return MIN(size, m_cache_size);
     }
 
+    size_t read(uintptr_t address, void **out) const {
+        size_t len = m_io.read(address, &m_cache[0], MAX_PEEKBUF_SIZE);
+        if UNLIKELY(len == PROCESS::IO::npos) {
+            /* hard failure to retrieve memory */
+            reset();
+            return PROCESS::IO::npos;
+        }
+
+        m_base = address;
+        m_cache_size = len;
+
+        /* return result to caller */
+        *out = reinterpret_cast<void*>(&m_cache[0]);
+        return m_cache_size;
+    }
+
     size_t write(uintptr_t address, void *in, size_t size) const {
         return m_io.write(address, in, size);
     }
 
 public:
-    static constexpr size_t MAX_PEEKBUF_SIZE = 4u << 10u;
+    static constexpr size_t MAX_PEEKBUF_SIZE = 4u << 20u;
 
 private:
     const PROCESS::IO& m_io;
@@ -95,9 +111,8 @@ private:
     mutable size_t m_cache_size;
     mutable std::vector<uint8_t> m_cache;
 };
-//
-//
-//
+
+
 // class MemoryIterator {
 // public:
 //     explicit MemoryIterator(const PROCESS::IO& proc, uintptr_t begin, uintptr_t end)

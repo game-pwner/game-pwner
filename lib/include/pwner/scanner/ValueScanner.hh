@@ -28,7 +28,7 @@
 #include <pwner/process/Process.hh>
 #include <pwner/process/IO/IO.hh>
 #include <pwner/scanner/Value.hh>
-#include <pwner/scanner/PredicateScanner.hh>
+#include <pwner/scanner/MemoryIterator.hh>
 
 
 NAMESPACE_BEGIN(PWNER)
@@ -92,25 +92,27 @@ public:
                       const user_value& uservalue,
                       predicate::predicate_t pred,
                       size_t step = 1) {
+        IOCached cachedReader{proc};
         for (const PROCESS::Region& region : proc.regions) {
             size_t region_beg = region.address;
             size_t region_end = region.address + region.size;
-            {
-                // У каждого потока есть свой кеш
-                ::PWNER::SCANNER::IOCached cachedReader{proc};
-                for(uintptr_t reg_pos = region_beg; reg_pos < region_end; reg_pos += step) {
-                    a64 mem{};
-                    // flag type = uservalue.vars[0].type;
-                    uint64_t copied = cachedReader.read(reg_pos, &mem, sizeof(a64));
-                    // uint64_t copied = proc.read(reg_pos, &mem, sizeof(a64));
-                    if UNLIKELY(copied == PROCESS::IO::npos) {
-                        std::cout<<"err: "<<HEX(reg_pos)<<", region: "<<region<<", errno: "<<std::strerror(errno)<<std::endl;
-                        break;
-                    }
-
-                    /* check if we have a match */
-                    if (flag type = pred(&mem, copied, nullptr, uservalue)) {
-                        writing_matches.emplace_back(reg_pos, mem, type);
+            for (uintptr_t reg_pos = region_beg; reg_pos < region_end;) {
+                char *buf = nullptr;
+                uint64_t size = cachedReader.read(reg_pos, reinterpret_cast<void**>(&buf));
+                if UNLIKELY(size == PROCESS::IO::npos) {
+                    std::cout<<"err: read: "<<HEX(reg_pos)<<", region: "<<region<<", errno: "<<std::strerror(errno)<<std::endl;
+                    break;
+                }
+                size = std::min(size, region_end - reg_pos);
+                if (size < uservalue.least) {
+                    reg_pos+=step;
+                    continue;
+                }
+                //fixme[high]: если step больше least, то гг вп
+                for (; size >= uservalue.least; buf+=step, reg_pos+=step, size-=step) {
+                    a64 *mem = reinterpret_cast<a64 *>(buf);
+                    if (flag type = pred(mem, uservalue.least, nullptr, uservalue)) {
+                        writing_matches.emplace_back(reg_pos, *mem, type);
                     }
                 }
             }
