@@ -12,7 +12,7 @@
 //
 #include <pwner/external.hh>
 #include <pwner/process/Process.hh>
-#include <pwner/scanner/ValueScanner.hh>
+#include <pwner/scanner/value/scanner_value.hh>
 //
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -21,7 +21,7 @@
 #include <pybind11/chrono.h>
 #include <pybind11/iostream.h>
 #include <pybind11/stl_bind.h>
-#include <pwner/scanner/PointerScanner.hh>
+#include <pwner/scanner/pointer/scanner_pointer.hh>
 
 
 PYBIND11_MAKE_OPAQUE(std::vector<PWNER::value_t>)

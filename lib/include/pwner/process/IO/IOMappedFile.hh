@@ -8,12 +8,12 @@
 #include <boost/serialization/vector.hpp>
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 NAMESPACE_BEGIN(PROCESS)
 
 class IOMappedFile : public IOMapped {
 public:
-    explicit IOMappedFile(const PWNER::PROCESS::IO& handler, const std::filesystem::path &path) {
+    explicit IOMappedFile(const IO& handler, const std::filesystem::path &path) {
         save(handler, path);
     }
 
@@ -21,7 +21,7 @@ public:
         load(path);
     }
 
-    void save(const PWNER::PROCESS::IO& handler, const std::filesystem::path &path) {
+    void save(const IO& handler, const std::filesystem::path &path) {
         regions = handler.regions;
 
         std::ofstream stream(path, std::ios_base::out | std::ios_base::binary);
@@ -105,4 +105,4 @@ protected:
 };
 
 NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

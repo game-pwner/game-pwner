@@ -3,7 +3,7 @@
 #include <pwner/process/IO/IO.hh>
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 NAMESPACE_BEGIN(PROCESS)
 
 class IOMappedHeap : public virtual IOMapped {
@@ -33,4 +33,4 @@ public:
 };
 
 NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

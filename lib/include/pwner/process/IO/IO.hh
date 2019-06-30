@@ -11,16 +11,11 @@
 #include <list>
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 NAMESPACE_BEGIN(PROCESS)
 
-class IO {
+class Regions {
 public:
-    virtual ~IO() = default;
-    virtual explicit operator bool() const = 0;
-    virtual size_t read(uintptr_t address, void *out, size_t size) const = 0;
-    virtual size_t write(uintptr_t address, void *in, size_t size) const = 0;
-
     virtual void update_regions() {
         for (Region& region : regions) {
             if (region.parent != 0) {
@@ -47,6 +42,23 @@ public:
         return nullptr;
     }
 
+    Segment *get_segment(uintptr_t address) const {
+        size_t first, last, mid;
+        first = 0;
+        last = segments.size();
+        while (first < last) {
+            mid = first + (last - first) / 2; // mid = (first + last) / 2;
+            if LIKELY(address < segments[mid].address) {
+                last = mid;
+            } else if LIKELY(address >= segments[mid].address + segments[mid].size) {
+                first = mid + 1;
+            } else {
+                return const_cast<Segment *>(&segments[mid]);
+            }
+        }
+        return nullptr;
+    }
+
     Segment *get_segment(const std::string& filename) const {
         //todo[high]: get region by path (compare also inode, device) (arguable)
         for (const Segment& region : segments)
@@ -67,6 +79,15 @@ public:
 
     std::vector<Region> regions;
     std::vector<Segment> segments;
+};
+
+
+class IO : public Regions {
+public:
+    virtual ~IO() = default;
+    virtual explicit operator bool() const = 0;
+    virtual size_t read(uintptr_t address, void *out, size_t size) const = 0;
+    virtual size_t write(uintptr_t address, void *in, size_t size) const = 0;
 };
 
 
@@ -102,4 +123,4 @@ public:
 
 
 NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

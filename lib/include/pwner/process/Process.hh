@@ -31,10 +31,9 @@
 #include <pwner/process/IO/IOMappedHeap.hh>
 #include <pwner/process/IO/IOMappedFile.hh>
 
-NAMESPACE_BEGIN(PWNER)
-NAMESPACE_BEGIN(PROCESS)
+NAMESPACE_BEGIN(pwner)
 
-class Process : virtual public IO {
+class Process : virtual public PROCESS::IO {
 public:
     uintptr_t get_call_address(uintptr_t address) const {
         uint64_t code = 0;
@@ -53,9 +52,9 @@ public:
 };
 
 
-class ProcessProcfs : virtual public Process, virtual public IOProcfs {
+class ProcessProcfs : virtual public Process, virtual public PROCESS::IOProcfs {
 public:
-    explicit ProcessProcfs(IOCRIU& io)
+    explicit ProcessProcfs(PROCESS::IOCRIU& io)
     : IOProcfs(io.restore()) {}
 
     explicit ProcessProcfs(pid_t pid)
@@ -66,14 +65,14 @@ public:
 };
 
 
-class ProcessHeap : virtual public Process, virtual public IOMappedHeap {
+class ProcessHeap : virtual public Process, virtual public PROCESS::IOMappedHeap {
 public:
     explicit ProcessHeap(const IO &io)
     : IOMappedHeap(io) {}
 };
 
 
-class ProcessFile : virtual public Process, virtual public IOMappedFile {
+class ProcessFile : virtual public Process, virtual public PROCESS::IOMappedFile {
 public:
     explicit ProcessFile(const IO& io, const std::filesystem::path& path)
     : IOMappedFile(io, path) {}
@@ -83,9 +82,9 @@ public:
 };
 
 
-class ProcessCRIU : virtual public Process, virtual public IOCRIU {
+class ProcessCRIU : virtual public Process, virtual public PROCESS::IOCRIU {
 public:
-    explicit ProcessCRIU(const IOProcfs& io, const std::filesystem::path& path)
+    explicit ProcessCRIU(const PROCESS::IOProcfs& io, const std::filesystem::path& path)
     : IOCRIU(path) {
         IOCRIU::set_pid(io.pid());
         IOCRIU::dump();
@@ -95,5 +94,4 @@ public:
     : IOCRIU(path) {}
 };
 
-NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

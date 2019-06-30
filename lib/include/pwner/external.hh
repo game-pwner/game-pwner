@@ -30,7 +30,7 @@
 #include "pwner/common.hh"
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 
 /** 
  * Retrieve a summary of tokens, no more than max_tokens size.
@@ -198,4 +198,4 @@ get_mem_free()
     return get_mem_total(2) + get_mem_total(3);
 }
 
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

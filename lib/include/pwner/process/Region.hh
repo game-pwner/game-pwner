@@ -8,7 +8,7 @@
 #include <bitmask/bitmask.hpp>
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 NAMESPACE_BEGIN(PROCESS)
 
 enum class region_mode_t : uint8_t {
@@ -100,4 +100,4 @@ public:
 };
 
 NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

@@ -8,7 +8,7 @@
 #include <sys/uio.h> // process_vm_readv
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 NAMESPACE_BEGIN(PROCESS)
 
 class IOProcfs : virtual public IO {
@@ -159,4 +159,4 @@ protected:
 };
 
 NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

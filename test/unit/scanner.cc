@@ -7,7 +7,7 @@
 #include <cmath>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <pwner/scanner/Value.hh>
-#include <pwner/scanner/ValueScanner.hh>
+#include <pwner/scanner/value/scanner_value.hh>
 
 
 struct constrable_check {

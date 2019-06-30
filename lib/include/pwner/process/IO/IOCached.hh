@@ -1,9 +1,3 @@
-//
-// Created by root on 22.06.19.
-//
-
-#pragma once
-
 /*
     This file is part of Reverse Engine.
 
@@ -31,14 +25,11 @@
 
 #pragma once
 
-#include <pwner/process/Process.hh>
+#include <pwner/common.hh>
 #include <pwner/process/IO/IO.hh>
-#include <pwner/scanner/Value.hh>
 
 
-NAMESPACE_BEGIN(PWNER)
-NAMESPACE_BEGIN(SCANNER)
-
+NAMESPACE_BEGIN(pwner)
 
 /** The cached reader made for reading small values many times to reduce system calls */
 class IOCached {
@@ -103,7 +94,7 @@ public:
     }
 
 public:
-    static constexpr size_t MAX_PEEKBUF_SIZE = 4u << 20u;
+    static constexpr size_t MAX_PEEKBUF_SIZE = 4u << 10u;
 
 private:
     const PROCESS::IO& m_io;
@@ -144,5 +135,4 @@ private:
 //     const uintptr_t m_end;
 // };
 
-NAMESPACE_END(SCANNER)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

@@ -7,7 +7,7 @@
 #include <criu/criu.h>
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 NAMESPACE_BEGIN(PROCESS)
 
 class IOCRIU : virtual public IO {
@@ -130,4 +130,4 @@ public:
 };
 
 NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

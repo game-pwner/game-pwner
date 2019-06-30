@@ -1,6 +1,3 @@
-//
-// Created by root on 24.03.19.
-//
 #pragma once
 
 #include <utility>
@@ -10,10 +7,10 @@
 #include <pwner/wrapper/OMP.hh>
 #include <pwner/scanner/Value.hh>
 #include <pwner/process/Process.hh>
-#include <pwner/scanner/ValueScanner.hh>
+#include <pwner/scanner/value/scanner_value.hh>
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 
 using namespace std;
 using namespace std::chrono;
@@ -101,12 +98,12 @@ public:
      * resolved[4] + offset[5] == resolved[5] == resolved.back()
      * read<float>(resolved.back(), &player[0].pos.z);
      */
-    PROCESS::Process &handler;
+    Process &handler;
     sfs::path file;
     std::vector<uintptr_t> offsets;
 
 public:
-    Pointer(PROCESS::Process &handler, const sfs::path &file, const std::vector<uintptr_t> &offsets)
+    Pointer(Process &handler, const sfs::path &file, const std::vector<uintptr_t> &offsets)
             : handler(handler), file(file), offsets(offsets) {}
 
     std::vector<uintptr_t>
@@ -114,9 +111,9 @@ public:
         std::vector<uintptr_t> ptr_resolved;
         ptr_resolved.reserve(offsets.size());
 
-        uintptr_t last = handler.get_region(file.string())->address + offsets[0];
+        uintptr_t last = handler.get_segment(file.string())->address + offsets[0];
         for (size_t i = 1; i < offsets.size(); i++) {
-            if (!handler.read(last, &last)) {
+            if (handler.read(last, &last, sizeof(uintptr_t)) != sizeof(uintptr_t)) {
                 ptr_resolved.resize(i);
                 return ptr_resolved;
             }
@@ -129,19 +126,19 @@ public:
 };
 
 
-class PointerScannerBackward {
+class scanner_pointer_backward {
 public:
-    explicit PointerScannerBackward(PROCESS::IOMapped& proc)
+    explicit scanner_pointer_backward(PROCESS::IOMapped& proc)
     : proc(proc) { }
 
-    void helper(PWNER::ScannerAddress& scanner, vector<std::pair<uintptr_t,uintptr_t>> offs_addr_val, std::vector<RegionPaths2>& out) {
+    void helper(ScannerAddress& scanner, vector<std::pair<uintptr_t,uintptr_t>> offs_addr_val, std::vector<RegionPaths2>& out) {
         std::vector<std::pair<uintptr_t,uintptr_t>> addresses;
         scanner.scan_regions(addresses, offs_addr_val.back().first - max_offset, offs_addr_val.back().first);
 
         offs_addr_val.emplace_back(0, 0);
         for(std::pair<uintptr_t,uintptr_t> address : addresses) {
             offs_addr_val.back() = address;
-            PROCESS::RegionStatic *sregion = proc.get_sregion(address.first);
+            PROCESS::Segment *sregion = proc.get_segment(address.first);
             if UNLIKELY(sregion != nullptr) {
                 auto res = std::find_if(out.begin(), out.end(), [&sregion](RegionPaths2& regionPaths) { return regionPaths.file == sregion->bin.file; });
                 res->paths.push_back(offs_addr_val);
@@ -158,13 +155,13 @@ public:
         using namespace std;
 
         std::vector<RegionPaths2> regions;
-        for(const PROCESS::RegionStatic& sregion : proc.sregions) {
+        for(const PROCESS::Segment& sregion : proc.segments) {
             RegionPaths2 regionPaths;
             regionPaths.file = sregion.bin.file;
             regions.emplace_back(regionPaths);
         }
 
-        PWNER::ScannerAddress scanner(proc);
+        ScannerAddress scanner{proc};
         scanner.step = align;
 
         paths_resolved = 0;
@@ -187,7 +184,7 @@ public:
     // 4 0x800 = 5.86742 seconds
     // 5 0x800 = 197.910 seconds
     /// Create file for storing matches
-    PWNER::PROCESS::IOMapped& proc;
+    PROCESS::IOMapped& proc;
     uintptr_t max_level = 3;
     uintptr_t min_offset = 0;
     uintptr_t max_offset = 0x800;
@@ -202,13 +199,13 @@ public:
 };
 
 
-class PointerScannerForward {
+class scanner_pointer_forward {
 public:
     // FIXME[critical]: it must scan for multiple addresses
-    explicit PointerScannerForward(PROCESS::Process& handler)
+    explicit scanner_pointer_forward(Process& handler)
     : proc(handler) { }
 
-    virtual ~PointerScannerForward() = default;
+    virtual ~scanner_pointer_forward() = default;
 
     void helper(vector<uintptr_t> off, uintptr_t last, uintptr_t address, RegionPaths& ps) {
         if (address >= last-min_offset && address < last+max_offset) {
@@ -227,7 +224,7 @@ public:
         for (size_t o1 = min_offset; o1 < max_offset; o1 += align) {
             off.back() = o1;
             uintptr_t s_last;
-            if (!proc.read(last+o1, &s_last)) {
+            if (proc.read(last+o1, &s_last, sizeof(uintptr_t)) != sizeof(uintptr_t)) {
                 continue;
             }
             helper(off, s_last, address, ps);
@@ -241,9 +238,9 @@ public:
         std::vector<RegionPaths> ret;
 
         /// for each region
-        for (size_t i = 0; i < proc.sregions.size(); i++) {
-            PROCESS::RegionStatic& region = proc.sregions[i];
-            cout<<"scan_regions: sregion["<<i<<"/"<<proc.sregions.size()<<"]: "<<region<<endl; //fixme [debug] #0
+        for (size_t i = 0; i < proc.segments.size(); i++) {
+            PROCESS::Segment& region = proc.segments[i];
+            cout<<"scan_regions: segments["<<i+1<<"/"<<proc.segments.size()<<"]: "<<region<<endl; //fixme [debug] #0
             RegionPaths ps;
             ps.file = region.bin.file.filename();
 
@@ -263,7 +260,7 @@ public:
             for (uintptr_t o = 0; o < static_offset_to; o += align) {
                 std::vector<uintptr_t> off {o};
                 uintptr_t last = static_begin + o;
-                if (!proc.read(last, &last)) {
+                if (proc.read(last, &last, sizeof(uintptr_t)) != sizeof(uintptr_t)) {
                     continue;
                 }
 
@@ -280,7 +277,7 @@ public:
 
 public:
     /// Create file for storing matches
-    PWNER::PROCESS::Process& proc;
+    Process& proc;
     OMP::Lock lock;
     volatile bool stop_flag = false;
     volatile double scan_progress = 0.0;
@@ -293,4 +290,4 @@ public:
 };
 
 
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

@@ -22,12 +22,12 @@
 
 #include <stdbool.h>
 #include <pwner/scanner/Value.hh>
-#include <pwner/scanner/ValueScanner.hh>
+#include <pwner/scanner/value/scanner_value.hh>
 #include <pwner/common.hh>
 #include <functional>
 
 
-using namespace PWNER::SCANNER;
+using namespace pwner;
 
 
 /* todo: try no_inline, maybe we will get some performance */
@@ -64,13 +64,10 @@ constexpr auto aksdjakl() {
 }
 
 template<predicate::variable_predicate MATCH_TYPE, flag_t TYPE_SPEC>
-flag scan_routine(const a64 *mem,
+uint16_t scan_routine(const a64 *mem,
                   size_t size,
                   const match *old_match,
                   const user_value& user_value) {
-    if (size == 0)
-        return flag{flag_t::none};
-
     if constexpr (MATCH_TYPE == predicate::variable_predicate::ANY) {
         flag ret{user_value.vars[0].type};
         if UNLIKELY(size < 8)
@@ -102,7 +99,7 @@ flag scan_routine(const a64 *mem,
                || MATCH_TYPE == predicate::variable_predicate::NOT_CHANGED
                || MATCH_TYPE == predicate::variable_predicate::INCREASED
                || MATCH_TYPE == predicate::variable_predicate::DECREASED) {
-        flag ret{old_match->type};
+        flag ret{static_cast<flag_t>(old_match->type)};
         if UNLIKELY(size < 8)
             flag_shrink(ret, size);
         if constexpr (TYPE_SPEC & flag_t::u8 ) if ((ret & flag_t::u8 ) == flag_t::none || !aksdjakl<MATCH_TYPE, ::u8 >()(mem->u8 , old_match->value.u8 )) { ret &= ~flag_t::u8 ; }
@@ -119,7 +116,7 @@ flag scan_routine(const a64 *mem,
     }
     if constexpr (MATCH_TYPE == predicate::variable_predicate::INCREASED_BY
                || MATCH_TYPE == predicate::variable_predicate::DECREASED_BY) {
-        flag ret{old_match->type};
+        flag ret{static_cast<flag_t>(old_match->type)};
         if UNLIKELY(size < 8)
             flag_shrink(ret, size);
         if constexpr (TYPE_SPEC & flag_t::u8 ) if ((ret & flag_t::u8 ) == flag_t::none || mem->u8  != aksdjakl<MATCH_TYPE, ::u8 >()(mem->u8 , old_match->value.u8 )) { ret &= ~flag_t::u8 ; }
@@ -144,28 +141,23 @@ flag scan_routine(const a64 *mem,
 }
 
 template<flag_t TYPE_SPEC>
-flag vla_predicate(const a64 *mem,
+uint16_t vla_predicate(const a64 *mem,
                    size_t size,
                    const match *old_match,
                    const user_value& user_value) {
-    if (size == 0)
-        return flag{flag_t::none};
-
     if constexpr (TYPE_SPEC == flag_t::u8)
         ;
-    return flag_t::none;
+    return 0;
 }
 
 template<flag_t TYPE_SPEC>
-flag string_predicate(const a64 *mem,
+uint16_t string_predicate(const a64 *mem,
                       size_t size,
                       const match *old_match,
                       const user_value& user_value) {
-    if (size == 0)
-        return flag{flag_t::none};
     if constexpr (TYPE_SPEC == flag_t::u8)
         ;
-    return flag_t::none;
+    return 0;
 }
 
 
@@ -182,7 +174,7 @@ predicate::predicate_t get_variable_predicate_(const user_value& user_value) {
     return scan_routine<MATCH_TYPE, flag_t::a64>;
 }
 
-predicate::predicate_t PWNER::SCANNER::predicate::get_variable_predicate(const user_value& user_value, predicate::variable_predicate e) {
+predicate::predicate_t pwner::predicate::get_variable_predicate(const user_value& user_value, predicate::variable_predicate e) {
     if (e == predicate::variable_predicate::ANY)                return get_variable_predicate_<predicate::variable_predicate::ANY>(user_value);
     if (e == predicate::variable_predicate::EQUAL_TO)           return get_variable_predicate_<predicate::variable_predicate::EQUAL_TO>(user_value);
     if (e == predicate::variable_predicate::NOT_EQUAL_TO)       return get_variable_predicate_<predicate::variable_predicate::NOT_EQUAL_TO>(user_value);
@@ -201,10 +193,10 @@ predicate::predicate_t PWNER::SCANNER::predicate::get_variable_predicate(const u
     return nullptr;
 }
 
-predicate::predicate_t PWNER::SCANNER::predicate::get_vla_predicate(const user_value& user_value) {
+predicate::predicate_t pwner::predicate::get_vla_predicate(const user_value& user_value) {
     return vla_predicate<flag_t::i8>;
 }
 
-predicate::predicate_t PWNER::SCANNER::predicate::get_string_predicate(const user_value& user_value) {
+predicate::predicate_t pwner::predicate::get_string_predicate(const user_value& user_value) {
     return string_predicate<flag_t::i8>;
 }
