@@ -5,9 +5,10 @@
 #pragma once
 
 #include <pwner/bin/standart/ELF.hh>
+#include <bitmask/bitmask.hpp>
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 NAMESPACE_BEGIN(PROCESS)
 
 enum class region_mode_t : uint8_t {
@@ -44,21 +45,6 @@ public:
         return ss.str();
     }
 
-// private:
-//     friend class boost::serialization::access;
-//
-//     template<class Archive>
-//     void serialize(Archive& ar, const unsigned int version) {
-//         ar & address;
-//         ar & size;
-//         ar & *reinterpret_cast<decltype(mode)::underlying_type*>(&mode);
-//         ar & *reinterpret_cast<decltype(mode)::underlying_type*>(&mode);
-//         ar & offset;
-//         ar & st_device_minor;
-//         ar & st_device_major;
-//         ar & inode;
-//         ar & file;
-//     }
 
     friend std::ostream &operator<<(std::ostream &os, const Region &region) {
         return os << region.str();
@@ -76,16 +62,16 @@ public:
     uint8_t st_device_minor;  /* Ambiguous todo rename */
     uint8_t st_device_major;  /* Ambiguous */
     uint64_t inode;
-    sfs::path file;
+    std::filesystem::path file;
 
     /// Value returned by various member functions when they fail.
     static constexpr size_t npos = static_cast<size_t>(-1);
 };
 
 
-class RegionStatic {
+class Segment {
 public:
-    explicit RegionStatic(Region& region)
+    explicit Segment(Region& region)
     : id(region.id), bin(region.file), address(region.address), size(0) {
         for(auto &section : bin.get_sections()) {
             uintptr_t __sz = section.section_addr + section.section_size;
@@ -93,7 +79,7 @@ public:
         }
     }
 
-    virtual ~RegionStatic() = default;
+    virtual ~Segment() = default;
 
     std::string str() const {
         std::ostringstream ss;
@@ -102,7 +88,7 @@ public:
         return ss.str();
     }
 
-    friend std::ostream& operator<<(std::ostream& outputStream, const RegionStatic& sregion) {
+    friend std::ostream& operator<<(std::ostream& outputStream, const Segment& sregion) {
         return outputStream<<sregion.str();
     }
 
@@ -114,4 +100,4 @@ public:
 };
 
 NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)

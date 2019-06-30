@@ -1,3 +1,40 @@
+include_guard(GLOBAL)
+
+
+
+
+define_property(GLOBAL PROPERTY PWN_OPENMP
+        BRIEF_DOCS "Include OpenMP"
+        FULL_DOCS "Include OpenMP. -omp"
+        )
+
+define_property(GLOBAL PROPERTY PWN_OPTIMIZATION
+        BRIEF_DOCS "Compile-time optimizations"
+        FULL_DOCS "Compile-time optimizations. -O<level>"
+        )
+
+define_property(GLOBAL PROPERTY PWN_DEBUG
+        BRIEF_DOCS "Include debug info"
+        FULL_DOCS "Include debug info. -ggdb -g3"
+        )
+
+
+function(target_properties_pwn TARGET)
+    if (NOT TARGET ${TARGET})
+        message(FATAL_ERROR "${TARGET} is not a target")
+    endif()
+
+    get_target_property(_openmp ${TARGET} OPENMP)
+    get_target_property(_debug ${TARGET} DEBUG)
+    get_target_property(_optimization ${TARGET} OPTIMIZATION)
+
+#    if (CMAKE_BUILD_TYPE AND CMAKE_BUILD_TYPE MATCHES Debug|RelWithDebInfo)
+
+endfunction()
+
+
+
+
 find_package(OpenACC QUIET)
 get_property(languages GLOBAL PROPERTY ENABLED_LANGUAGES)
 
@@ -56,8 +93,6 @@ function(target_use_debug TARGET)
     # target_compile_options(${TARGET} PUBLIC "$<$<STREQUAL:${CMAKE_CXX_COMPILER_ID},Intel>:-Wl,-rpath=/opt/intel/compilers_and_libraries/linux/lib/intel64>")
     target_compile_options(${TARGET} PUBLIC "$<$<STREQUAL:${CMAKE_CXX_COMPILER_ID},GNU>:-g3;-ggdb3>")
     target_compile_options(${TARGET} PUBLIC "$<$<STREQUAL:${CMAKE_CXX_COMPILER_ID},Clang>:-g3>")
-
-    # target_compile_definitions(${TARGET} PUBLIC -DOMPTARGET_DEBUG)
 endfunction()
 
 
@@ -110,7 +145,7 @@ function(target_use_warnings TARGET LEVEL)
     target_compile_options(${TARGET} PUBLIC
             -Wall -Wextra
             -Wno-unused
-            -Wconversion -Wsign-conversion
+            -Wconversion
             -Wformat
             #[[GNU,Clang]] "$<$<NOT:$<STREQUAL:${CMAKE_CXX_COMPILER_ID},Intel>>:-Wpedantic>"
             #[[GNU,Clang]] "$<$<NOT:$<STREQUAL:${CMAKE_CXX_COMPILER_ID},Intel>>:-Wstack-protector>"
@@ -119,6 +154,11 @@ function(target_use_warnings TARGET LEVEL)
         target_compile_options(${TARGET} PUBLIC
                 -Werror=format-security
                 -Werror=return-type
+                )
+    endif()
+    if (LEVEL GREATER_EQUAL 2)
+        target_compile_options(${TARGET} PUBLIC
+                -Wsign-conversion
                 )
     endif()
     if (LEVEL GREATER_EQUAL 3)

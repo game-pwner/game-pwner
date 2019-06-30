@@ -1,63 +1,64 @@
-
+#pragma once
 
 #include <regex>
 #include <pwner/common.hh>
 #include <pwner/external.hh>
-#include <pwner/process/Regions.hh>
-#include <pwner/process/IO.hh>
+#include <pwner/process/IO/IO.hh>
 #include <cinttypes>
+#include <sys/uio.h> // process_vm_readv
 
 
-NAMESPACE_BEGIN(PWNER)
+NAMESPACE_BEGIN(pwner)
 NAMESPACE_BEGIN(PROCESS)
 
 class IOProcfs : virtual public IO {
 public:
+    IOProcfs()
+    : m_pid(0) {}
+
     explicit IOProcfs(pid_t pid)
     : m_pid(pid) {
         update_regions();
     }
 
-    explicit IOProcfs(const std::regex &regex_pattern_cmdline)
+    explicit IOProcfs(const std::string &regex_pattern_cmdline)
     : m_pid(from_cmdline(regex_pattern_cmdline)) {
         update_regions();
     }
 
-    virtual ~IOProcfs() = default;
+    static bool running(pid_t pid) { return std::filesystem::exists(std::filesystem::path("/proc") / std::to_string(pid)); }
 
-    static bool running(pid_t pid) { return sfs::exists(sfs::path("/proc") / std::to_string(pid)); }
+    static std::filesystem::path cwd(pid_t pid) { return std::filesystem::read_symlink(std::filesystem::path("/proc") / std::to_string(pid) / "cwd"); }
 
-    static std::filesystem::path cwd(pid_t pid) { return sfs::read_symlink(sfs::path("/proc") / std::to_string(pid) / "cwd"); }
-
-    static std::filesystem::path exe(pid_t pid) { return sfs::read_symlink(sfs::path("/proc") / std::to_string(pid) / "exe"); }
+    static std::filesystem::path exe(pid_t pid) { return std::filesystem::read_symlink(std::filesystem::path("/proc") / std::to_string(pid) / "exe"); }
 
     static std::string cmdline(pid_t pid) {
-        std::ifstream t(sfs::path("/proc") / std::to_string(pid) / "cmdline");
+        std::ifstream t(std::filesystem::path("/proc") / std::to_string(pid) / "cmdline");
         std::ostringstream ss;
         ss<<t.rdbuf();
         return ss.str();
     }
 
-    static pid_t from_cmdline(const std::regex &pattern_cmdline) {
-        for(auto& p: sfs::directory_iterator("/proc")) {
+    static pid_t from_cmdline(const std::string &pattern_cmdline) {
+        const std::regex pattern(pattern_cmdline);
+        for(auto& p: std::filesystem::directory_iterator("/proc")) {
             if (p.path().filename().string().find_first_not_of("0123456789") != std::string::npos)
                 /* if filename is not numeric */
                 continue;
-            if (!sfs::is_directory(p))
+            if (!std::filesystem::is_directory(p))
                 continue;
-            if (!sfs::exists(p / "maps"))
+            if (!std::filesystem::exists(p / "maps"))
                 continue;
-            if (!sfs::exists(p / "exe"))
+            if (!std::filesystem::exists(p / "exe"))
                 continue;
-            if (!sfs::exists(p / "cmdline"))
+            if (!std::filesystem::exists(p / "cmdline"))
                 continue;
             std::istringstream ss(p.path().filename().string());
             pid_t pid;
             ss >> pid;
             std::string m_cmdline = cmdline(pid);
 
-            std::smatch match;
-            if (std::regex_search(m_cmdline, match, pattern_cmdline)) {
+            if (std::regex_search(m_cmdline, pattern)) {
                 return pid;
             }
         }
@@ -65,7 +66,6 @@ public:
     }
 
     bool running() const { return running(m_pid); };
-    // bool running() { return sfs::exists(sfs::path("/proc") / std::to_string(m_pid)); };
 
     std::filesystem::path cwd() const { return cwd(m_pid); };
 
@@ -77,38 +77,41 @@ public:
 
     void update_regions() override {
         regions.clear();
-        regions.emplace_back(Region{});
-        std::ifstream maps(sfs::path("/proc") / std::to_string(pid()) / "maps");
+        regions.emplace_back();
+        std::ifstream maps(std::filesystem::path("/proc") / std::to_string(pid()) / "maps");
+        // Timer __t("update_regions");
 
         std::string line;
         while (getline(maps, line)) {
-            // todo[med]: rewrite as it done in tools/ad/ad.h
             // 00601000-00602000 rw-p 00001000 08:11 3427227      /bin/FAKEMEM
-            std::vector<std::string> cols = tokenize(line, " ", 6);
-            if (cols.size() < 5)
-                continue;
             Region r;
-            std::vector<std::string> mem = tokenize(cols[0], "-");
-            r.address = strtoumax(mem[0].c_str(), nullptr, 16);
-            r.size = strtoumax(mem[1].c_str(), nullptr, 16) - r.address;
-            r.mode |= (cols[1][0] == 'r') ? region_mode_t::readable : region_mode_t::none;
-            r.mode |= (cols[1][1] == 'w') ? region_mode_t::writable : region_mode_t::none;
-            r.mode |= (cols[1][2] == 'x') ? region_mode_t::executable : region_mode_t::none;
-            r.mode |= (cols[1][3] == 's') ? region_mode_t::shared : region_mode_t::none;
-            r.offset = strtoumax(cols[2].c_str(), nullptr, 16);
-            std::vector<std::string> dev = tokenize(cols[3], ":");
-            r.st_device_major = strtoumax(dev[0].c_str(), nullptr, 16);
-            r.st_device_minor = strtoumax(dev[1].c_str(), nullptr, 16);
-            r.inode = strtoumax(cols[4].c_str(), nullptr, 10);
-            if (cols.size() > 5)
-                r.file = sfs::path(cols[5]);
+            const char *linec = const_cast<char *>(line.c_str());
+            r.address = strtoumax(linec, const_cast<char **>(&linec), 16);
+            linec++;
+            r.size = strtoumax(linec, const_cast<char **>(&linec), 16) - r.address;
+            linec++;
+            r.mode |= (linec[0] == 'r') ? region_mode_t::readable : region_mode_t::none;
+            r.mode |= (linec[1] == 'w') ? region_mode_t::writable : region_mode_t::none;
+            r.mode |= (linec[2] == 'x') ? region_mode_t::executable : region_mode_t::none;
+            r.mode |= (linec[3] == 's') ? region_mode_t::shared : region_mode_t::none;
+            linec += 5;
+            r.offset = strtoumax(linec, const_cast<char **>(&linec), 16);
+            linec++;
+            r.st_device_major = static_cast<uint8_t>(strtoumax(linec, const_cast<char **>(&linec), 16));
+            linec++;
+            r.st_device_minor = static_cast<uint8_t>(strtoumax(linec, const_cast<char **>(&linec), 16));
+            linec++;
+            r.inode = strtoumax(linec, const_cast<char **>(&linec), 10);
+            while(isspace(*linec))
+                linec++;
+            r.file = std::filesystem::path(linec);
             regions.push_back(r);
         }
 
         for (size_t i = 0; i < regions.size(); i++) {
             Region& r = regions[i];
             r.id = i;
-            if (r.offset != 0 || (r.mode & region_mode_t::writable) == 1 || !sfs::exists(r.file)) {
+            if (r.offset != 0 || (r.mode & region_mode_t::writable) == 1 || !std::filesystem::exists(r.file)) {
                 // std::clog << "Procfs::update_regions(): skipping region: " << r << std::endl;
                 continue;
             }
@@ -124,11 +127,11 @@ public:
             }
         }
 
-        Regions::update_regions();
+        IO::update_regions();
     }
 
     explicit operator bool() const override {
-        return m_pid != 0;
+        return m_pid > 0;
     }
 
     size_t read(uintptr_t address, void *out, size_t size) const override {
@@ -156,4 +159,4 @@ protected:
 };
 
 NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+NAMESPACE_END(pwner)
