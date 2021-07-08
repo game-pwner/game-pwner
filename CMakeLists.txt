@@ -6,6 +6,7 @@
 # todo[critical]: CMakeLists.txt: find and set lowest possible cmake version, compare CMP's and write missing functions
 cmake_minimum_required(VERSION 3.11...3.14.3)
 
+include(${CMAKE_SOURCE_DIR}/cmake/properties.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/common.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/dependencies.cmake)
 #include(${CMAKE_SOURCE_DIR}/cmake/PVS-Studio.cmake) # TODO[critical]: CMakeLists.txt: what if PVS-Studio.lic not exists?

@@ -7,7 +7,7 @@ set_target_properties(${TARGET} PROPERTIES
         CXX_STANDARD 20
         )
 target_use_debug(${TARGET})
-target_use_hardening(${TARGET} 2)
+target_use_hardening(${TARGET} 0)
 target_use_warnings(${TARGET} 1)
 target_compile_options(${TARGET} PUBLIC
         -O3

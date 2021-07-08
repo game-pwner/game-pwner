@@ -22,43 +22,27 @@
 
 #pragma once
 
-#include <sys/uio.h>
-#include <iostream>
-#include <vector>
-#include <sstream>
-#include <fstream>
-#include <unistd.h>
-#include <cstring>
-#include <iomanip>
-#include <algorithm>
-#include <filesystem>
-#include <regex>
-#include <sys/stat.h>
-#include <sys/sysmacros.h>
-#include <boost/iostreams/device/mapped_file.hpp>
-#include <boost/archive/binary_iarchive.hpp>
-#include <boost/archive/binary_oarchive.hpp>
-#include <boost/serialization/vector.hpp>
-#include <pwner/scanner/Value.hh>
+//FIXME[critical]: move useless includes to sources
 #include <pwner/external.hh>
 #include <pwner/common.hh>
-#include <pwner/process/IO.hh>
-#include <pwner/process/handlers/Procfs.hh>
+#include <pwner/process/IO/IO.hh>
+#include <pwner/process/IO/IOProcfs.hh>
+#include <pwner/process/IO/IOCRIU.hh>
+#include <pwner/process/IO/IOMappedHeap.hh>
+#include <pwner/process/IO/IOMappedFile.hh>
 
+NAMESPACE_BEGIN(pwner)
 
-NAMESPACE_BEGIN(PWNER)
-NAMESPACE_BEGIN(PROCESS)
-
-class Process : virtual public IO {
+class Process : virtual public PROCESS::IO {
 public:
-    uintptr_t get_call_address(uintptr_t address) {
+    uintptr_t get_call_address(uintptr_t address) const {
         uint64_t code = 0;
         if (read(address + 1, &code, sizeof(uint32_t)) == sizeof(uint32_t))
             return code + address + 5;
         return 0;
     }
 
-    uintptr_t get_absolute_address(uintptr_t address, uintptr_t offset, uintptr_t size) {
+    uintptr_t get_absolute_address(uintptr_t address, uintptr_t offset, uintptr_t size) const {
         uint64_t code = 0;
         if (read(address + offset, &code, sizeof(uint32_t)) == sizeof(uint32_t)) {
             return address + code + size;
@@ -67,30 +51,47 @@ public:
     }
 };
 
-class ProcessProcfs : public Process, public IOProcfs {
+
+class ProcessProcfs : virtual public Process, virtual public PROCESS::IOProcfs {
 public:
+    explicit ProcessProcfs(PROCESS::IOCRIU& io)
+    : IOProcfs(io.restore()) {}
+
     explicit ProcessProcfs(pid_t pid)
-    : IOProcfs(pid) { }
+    : IOProcfs(pid) {}
 
-    explicit ProcessProcfs(const std::regex& regex_pattern_cmdline)
-    : IOProcfs(regex_pattern_cmdline) { }
+    explicit ProcessProcfs(const std::string& regex_pattern_cmdline)
+    : IOProcfs(regex_pattern_cmdline) {}
 };
 
 
-class ProcessHeap : public Process, public IOMappedHeap {
+class ProcessHeap : virtual public Process, virtual public PROCESS::IOMappedHeap {
 public:
-    explicit ProcessHeap(IO &io)
-    : IOMappedHeap(io) { }
+    explicit ProcessHeap(const IO &io)
+    : IOMappedHeap(io) {}
 };
 
-// class ProcessFile : public Process, public IOMappedFile {
-// public:
-//     explicit ProcessFile(const IO &io)
-//     : IOMappedFile(io) { }
-//
-//     explicit ProcessFile(const std::filesystem::path &file)
-//     : IOMappedFile(file) { }
-// };
 
-NAMESPACE_END(PROCESS)
-NAMESPACE_END(PWNER)
+class ProcessFile : virtual public Process, virtual public PROCESS::IOMappedFile {
+public:
+    explicit ProcessFile(const IO& io, const std::filesystem::path& path)
+    : IOMappedFile(io, path) {}
+
+    explicit ProcessFile(const std::filesystem::path& path)
+    : IOMappedFile(path) {}
+};
+
+
+class ProcessCRIU : virtual public Process, virtual public PROCESS::IOCRIU {
+public:
+    explicit ProcessCRIU(const PROCESS::IOProcfs& io, const std::filesystem::path& path)
+    : IOCRIU(path) {
+        IOCRIU::set_pid(io.pid());
+        IOCRIU::dump();
+    }
+
+    explicit ProcessCRIU(const std::filesystem::path& path)
+    : IOCRIU(path) {}
+};
+
+NAMESPACE_END(pwner)

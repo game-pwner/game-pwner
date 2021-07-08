@@ -53,20 +53,6 @@ LIFT_ENUM_OP(^,^=)
 
 #endif
 
-
-//constexpr std::size_t operator""_KiB(unsigned long long v) {
-//    return v<<10u;
-//}
-//constexpr std::size_t operator""_MiB(unsigned long long v) {
-//    return v<<20u;
-//}
-//constexpr std::size_t operator""_GiB(unsigned long long v) {
-//    return v<<30u;
-//}
-constexpr std::size_t KiB = 1u<<10u;
-constexpr std::size_t MiB = 1u<<20u;
-constexpr std::size_t GiB = 1u<<30u;
-
 #ifndef FORCE_INLINE
 # if __MSVC__ // _MSC_VER
 #  define FORCE_INLINE __forceinline
@@ -96,35 +82,40 @@ constexpr std::size_t GiB = 1u<<30u;
 #endif
 
 
-typedef int8_t i8;
-typedef uint8_t u8;
-typedef int16_t i16;
-typedef uint16_t u16;
-typedef int32_t i32;
-typedef uint32_t u32;
-typedef int64_t i64;
-typedef uint64_t u64;
-typedef float f32;
-typedef double f64;
-
-
-
-static void oom_score_adj(ssize_t x) {
-    std::fstream f("/proc/self/oom_score_adj", std::ios::out);
-    if (f.is_open())
+static inline void oom_score_adj(ssize_t x) noexcept {
+    if (std::fstream f{"/proc/self/oom_score_adj", std::ios::out}; f.is_open())
         f << std::to_string(x);
 }
 
+using u8  = uint8_t;
+using s8  =  int8_t;
+using u16 = uint16_t;
+using s16 =  int16_t;
+using u32 = uint32_t;
+using s32 =  int32_t;
+using u64 = uint64_t;
+using s64 =  int64_t;
+using f32 = float;
+using f64 = double;
 
-namespace sfs = std::filesystem;
-
-
+union a64 {
+    ::u8  u8;
+    ::s8  s8;
+    ::u16 u16;
+    ::s16 s16;
+    ::u32 u32;
+    ::s32 s32;
+    ::u64 u64;
+    ::s64 s64;
+    ::f32 f32;
+    ::f64 f64;
+    ::u8 data[sizeof(::u64)];
+};
 
 /** @arg what: any number
  * @return: string number represented as hex */
 template <typename T, size_t value_size = sizeof(T), std::endian endianess = std::endian::native>
-std::string HEX(const T& value)
-{
+std::string HEX(const T& value) {
     using namespace std;
     auto *buffer = (uint8_t *)(&value);
     char converted[value_size * 2 + 1];
@@ -141,7 +132,7 @@ std::string HEX(const T& value)
 
 class Timer {
 public:
-    explicit Timer(std::string what = "Timer")
+    explicit Timer(std::string what)
             : m_what(std::move(what)), m_tp(std::chrono::high_resolution_clock::now()) {}
 
     ~Timer() {

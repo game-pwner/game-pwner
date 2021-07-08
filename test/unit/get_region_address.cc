@@ -53,35 +53,6 @@ std::vector<Region> regions;
 // __attribute__ ((noinline)) get_region__binary_faster(uintptr_t address) {
 // }
 
-/*
-usage  =
-    (
-    (
-    (
-    (
-    (ul_sys_kernel.QuadPart - ul_sys_kernel_old.QuadPart)+
-    (ul_sys_user.QuadPart   - ul_sys_user_old.QuadPart)
-    )
-    -
-    (ul_sys_idle.QuadPart-ul_sys_idle_old.QuadPart)
-    )
-    *
-    (100)
-    )
-    /
-    (
-    (ul_sys_kernel.QuadPart - ul_sys_kernel_old.QuadPart)+
-    (ul_sys_user.QuadPart   - ul_sys_user_old.QuadPart)
-    )
-    );
-
-
-usage =
-    (((((ul_sys_kernel.QuadPart - ul_sys_kernel_old.QuadPart) + (ul_sys_user.QuadPart - ul_sys_user_old.QuadPart)) - (ul_sys_idle.QuadPart-ul_sys_idle_old.QuadPart))*100)
-    / ((ul_sys_kernel.QuadPart - ul_sys_kernel_old.QuadPart)+(ul_sys_user.QuadPart   - ul_sys_user_old.QuadPart)));
-
-*/
-
 Region *
 __attribute__ ((noinline)) get_region__binary_fast(uintptr_t address) { ///SUCCESS
     std::vector<Region>::iterator first = regions.begin();

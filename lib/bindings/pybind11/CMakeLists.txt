@@ -11,7 +11,8 @@ find_package(Python 3 REQUIRED COMPONENTS
 # ┌──────────────────────────────────────────────────────────────────┐
 #   Configuration flags
 # └──────────────────────────────────────────────────────────────────┘
-add_library(${PROJECT_NAME} SHARED pwner.cc)
+file(GLOB_RECURSE ${PROJECT_NAME}_SOURCES_LIST "${CMAKE_CURRENT_SOURCE_DIR}/*.cc")
+add_library(${PROJECT_NAME} SHARED ${${PROJECT_NAME}_SOURCES_LIST})
 add_dependencies(${PROJECT_NAME} pwner)
 target_include_directories(${PROJECT_NAME}
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}

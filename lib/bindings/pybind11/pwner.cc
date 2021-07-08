@@ -12,75 +12,44 @@
 //
 #include <pwner/external.hh>
 #include <pwner/process/Process.hh>
+#include <pwner/scanner/value/scanner_value.hh>
 //
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/complex.h>
+#include <pybind11/functional.h>
+#include <pybind11/chrono.h>
+#include <pybind11/iostream.h>
+#include <pybind11/stl_bind.h>
+#include <pwner/scanner/pointer/scanner_pointer.hh>
+
+
+PYBIND11_MAKE_OPAQUE(std::vector<PWNER::value_t>)
 
 namespace py = pybind11;
 
-namespace PWNER {
-    // static PyObject *
-    // addressof(PyObject *self, PyObject *obj)
-    // {
-    //     if (CDataObject_Check(obj))
-    //         return PyLong_FromVoidPtr(((CDataObject *)obj)->b_ptr);
-    //     PyErr_SetString(PyExc_TypeError,
-    //                     "invalid type");
-    //     return NULL;
-    // }
 
-    py::object addressof(py::object& o)
-    {
-        py::object addr = o.attr("_address_")();
-        return addr;
-    }
-}
-
+// TODO[high]: split to modules to speedup build time
 PYBIND11_MODULE(pwner, m) {
     m.doc() = "pybind11 wrapper for Reverse Engine";
-    m.def("addressof", &PWNER::addressof, "gets the address where the function pointer is stored");
 
-    ///*
-    // TODO[high]: split to modules to speedup build time
-    // // RE/shape.hh
-    // py::class_<PWNER::Shape>(m, "Shape")
-    //         .def_readwrite("x", &PWNER::Shape::x)
-    //         .def_readwrite("y", &PWNER::Shape::y)
-    //         .def("move", &PWNER::Shape::move)
-    //         .def("area", &PWNER::Shape::area)
-    //         .def("perimeter", &PWNER::Shape::perimeter)
-    //         .def_readwrite_static("nshapes", &PWNER::Shape::nshapes)
-    //         ;
-    // py::class_<PWNER::Circle, PWNER::Shape>(m, "Circle")
-    //         .def(py::init<double>())
-    //         ;
-    // py::class_<PWNER::Square, PWNER::Shape>(m, "Square")
-    //         .def(py::init<double>())
-    //         ;
-    //
-    // // RE/nearest_neighbors.hh
-    // py::class_<PWNER::Point>(m, "Point")
-    //         .def(py::init<>())
-    //         .def(py::init<double, double>())
-    //         .def_readwrite("x", &PWNER::Point::x)
-    //         .def_readwrite("y", &PWNER::Point::y)
-    //         ;
-    // py::class_<PWNER::NearestNeighbors>(m, "NearestNeighbors")
-    //         .def(py::init<>())
-    //         .def_readwrite("points", &PWNER::NearestNeighbors::points)
-    //         .def("nearest", &PWNER::NearestNeighbors::nearest)
-    //         ;
+    // pwner/common.hh
     m.def("oom_score_adj", &oom_score_adj);
 
-    // RE/external.hh
+    // pwner/external.hh
     m.def("execute", &PWNER::execute);
     py::class_<PWNER::CProcess>(m, "CProcess")
             .def(py::init<const std::string &, const std::string &, const std::string &>())
+            .def_readwrite("pid", &PWNER::CProcess::pid)
+            .def_readwrite("user", &PWNER::CProcess::user)
+            .def_readwrite("command", &PWNER::CProcess::command)
             .def("__repr__", &PWNER::CProcess::str)
             ;
     m.def("getProcesses", &PWNER::getProcesses);
     m.def("get_mem_total", &PWNER::get_mem_total, "list(MemTotal, MemFree, MemAvailable, Cached)[i]", py::arg("i") = 0);
     m.def("get_mem_free", &PWNER::get_mem_free);
+
+    // todo pwner/bin/...
 
     // pwner/process/Region.hh
     py::class_<PWNER::PROCESS::Region>(m, "Region")
@@ -96,7 +65,7 @@ PYBIND11_MODULE(pwner, m) {
             .def_readwrite("st_device_major", &PWNER::PROCESS::Region::st_device_major)
             .def_readwrite("inode", &PWNER::PROCESS::Region::inode)
             .def_readwrite("file", &PWNER::PROCESS::Region::file)
-            // .def_readwrite_static("npos", &PWNER::PROCESS::Region::npos)
+            .def_readonly_static("npos", &PWNER::PROCESS::Region::npos)
             ;
 
     py::class_<PWNER::PROCESS::RegionStatic>(m, "RegionStatic")
@@ -112,10 +81,10 @@ PYBIND11_MODULE(pwner, m) {
     py::class_<PWNER::PROCESS::Regions>(m, "Regions")
             .def(py::init<>())
             .def("update_regions", &PWNER::PROCESS::Regions::update_regions)
-            .def("get_region", py::overload_cast<uintptr_t>(&PWNER::PROCESS::Regions::get_region, py::const_))
-            .def("get_sregion", py::overload_cast<uintptr_t>(&PWNER::PROCESS::Regions::get_sregion, py::const_))
-            .def("get_region", py::overload_cast<const std::string&>(&PWNER::PROCESS::Regions::get_region, py::const_))
-            .def("get_region", py::overload_cast<const std::filesystem::path&>(&PWNER::PROCESS::Regions::get_region, py::const_))
+            .def("get_region",  py::overload_cast<uintptr_t>(&PWNER::PROCESS::Regions::get_region, py::const_), py::arg("address"))
+            .def("get_sregion", py::overload_cast<uintptr_t>(&PWNER::PROCESS::Regions::get_sregion, py::const_), py::arg("address"))
+            .def("get_region",  py::overload_cast<const std::string&>(&PWNER::PROCESS::Regions::get_region, py::const_), py::arg("filename"))
+            .def("get_region",  py::overload_cast<const std::filesystem::path&>(&PWNER::PROCESS::Regions::get_region, py::const_), py::arg("filename"))
             .def_readwrite("regions", &PWNER::PROCESS::Regions::regions)
             .def_readwrite("sregions", &PWNER::PROCESS::Regions::sregions)
             ;
@@ -125,95 +94,139 @@ PYBIND11_MODULE(pwner, m) {
             // .def(py::init<>())
             // .def("read", py::overload_cast<uintptr_t, void*, size_t>(&PWNER::PROCESS::IO::read, py::const_))
             // .def("write", py::overload_cast<uintptr_t, void*, size_t>(&PWNER::PROCESS::IO::write, py::const_))
-            .def("read", py::overload_cast<uintptr_t, uint64_t *>(&PWNER::PROCESS::IO::read<uint64_t>, py::const_))
-            .def("write", py::overload_cast<uintptr_t, uint64_t *>(&PWNER::PROCESS::IO::write<uint64_t>, py::const_))
-            // .def_readwrite_static("npos", &PWNER::PROCESS::IO::npos)
+            // .def("read", py::overload_cast<uintptr_t, uint64_t *>(&PWNER::PROCESS::IO::read<uint64_t>, py::const_))
+            // .def("write", py::overload_cast<uintptr_t, uint64_t *>(&PWNER::PROCESS::IO::write<uint64_t>, py::const_))
+            .def_readonly_static("npos", &PWNER::PROCESS::IO::npos)
             ;
 
-    // pwner/process/handlers/Procfs.hh
-    // uint64_t p = reinterpret_cast<void*>(&PWNER::PROCESS::IOProcfs::running);
+    py::class_<PWNER::PROCESS::IOMapped, PWNER::PROCESS::IO>(m, "IOMapped")
+            .def("read",           static_cast<size_t (PWNER::PROCESS::IOMapped::*)(uintptr_t, void *, size_t) const>(&PWNER::PROCESS::IOMapped::read))
+            .def("write",          static_cast<size_t (PWNER::PROCESS::IOMapped::*)(uintptr_t, void *, size_t) const>(&PWNER::PROCESS::IOMapped::write))
+            ;
+
+    py::class_<PWNER::PROCESS::IOMappedHeap, PWNER::PROCESS::IOMapped>(m, "IOMappedHeap")
+            .def(py::init<PWNER::PROCESS::IO&>())
+            ;
+
+    //todo also pwner/process/IO.hh
+
+    // pwner/process/IO/Procfs.hh
     py::class_<PWNER::PROCESS::IOProcfs, PWNER::PROCESS::IO>(m, "IOProcfs")
             .def(py::init<pid_t>())
-            .def(py::init<const std::regex &>())
-            // static
-            .def("running",        static_cast<bool (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::running))
-            .def("cwd",            static_cast<std::filesystem::path (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::cwd))
-            .def("exe",            static_cast<std::filesystem::path (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::exe))
-            .def("cmdline",        static_cast<std::string (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::cmdline))
-            .def("from_cmdline",   static_cast<pid_t (*)(const std::regex &)>(&PWNER::PROCESS::IOProcfs::from_cmdline))
-            // dynamic
+            .def(py::init<const std::string &>())
+            .def_static("running_",        static_cast<bool (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::running), py::arg("pid"))
+            .def_static("cwd_",            static_cast<std::filesystem::path (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::cwd), py::arg("pid"))
+            .def_static("exe_",            static_cast<std::filesystem::path (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::exe), py::arg("pid"))
+            .def_static("cmdline_",        static_cast<std::string (*)(pid_t)>(&PWNER::PROCESS::IOProcfs::cmdline), py::arg("pid"))
+            .def_static("from_cmdline_",   static_cast<pid_t (*)(const std::string &)>(&PWNER::PROCESS::IOProcfs::from_cmdline), py::arg("pattern_cmdline"))
             .def("running",        static_cast<bool (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::running))
             .def("cwd",            static_cast<std::filesystem::path (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::cwd))
             .def("exe",            static_cast<std::filesystem::path (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::exe))
             .def("cmdline",        static_cast<std::string (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::cmdline))
             .def("pid",            static_cast<pid_t (PWNER::PROCESS::IOProcfs::*)() const>(&PWNER::PROCESS::IOProcfs::pid))
             .def("update_regions", &PWNER::PROCESS::IOProcfs::update_regions)
-            .def("read",           static_cast<size_t (PWNER::PROCESS::IOProcfs::*)(uintptr_t, void *, size_t) const>(&PWNER::PROCESS::IOProcfs::read))
-            .def("write",          static_cast<size_t (PWNER::PROCESS::IOProcfs::*)(uintptr_t, void *, size_t) const>(&PWNER::PROCESS::IOProcfs::write))
-            // .def_readwrite_static("npos", &PWNER::PROCESS::IO::npos)
+            .def("read", [](PWNER::PROCESS::IOProcfs& self, uintptr_t& address, size_t& size) -> auto {
+                std::vector<uint8_t> b(size);
+                size_t s = self.read(address, b.data(), size);
+                if (s == PWNER::PROCESS::IOProcfs::npos)
+                    s = 0;
+                py::bytes result = py::bytes(reinterpret_cast<char *>(b.data()), s);
+                return result;
+            }, "Read bytes from handler", py::arg("address"), py::arg("size"))
+            // todo write!
+            // .def("write", &PWNER::Handle::write, "Write to handle", py::arg("address"), py::arg("in"), py::arg("size"))
+            // .def("write",          static_cast<size_t (PWNER::PROCESS::IOProcfs::*)(uintptr_t, void *, size_t) const>(&PWNER::PROCESS::IOProcfs::write))
+            ;
+
+    // pwner/process/Process.hh
+    py::class_<PWNER::PROCESS::Process, PWNER::PROCESS::IO>(m, "Process")
+            .def("get_call_address", &PWNER::PROCESS::Process::get_call_address, py::arg("address"))
+            .def("get_absolute_address", &PWNER::PROCESS::Process::get_absolute_address, py::arg("address"), py::arg("offset"), py::arg("size"))
+            ;
+
+    py::class_<PWNER::PROCESS::ProcessProcfs, PWNER::PROCESS::Process, PWNER::PROCESS::IOProcfs>(m, "ProcessProcfs")
+            .def(py::init<pid_t>())
+            .def(py::init<const std::string &>())
+            ;
+
+    py::class_<PWNER::PROCESS::ProcessHeap, PWNER::PROCESS::Process, PWNER::PROCESS::IOMappedHeap>(m, "ProcessHeap")
+            .def(py::init<PWNER::PROCESS::IO&>())
             ;
 
 
+    // pwner/scanner/Value.hh
+    py::enum_<PWNER::data_type_t>(m, "data_type_t", py::arithmetic())
+            .value("ANYNUMBER",  PWNER::data_type_t::ANYNUMBER)
+            .value("ANYINTEGER", PWNER::data_type_t::ANYINTEGER)
+            .value("ANYFLOAT",   PWNER::data_type_t::ANYFLOAT)
+            .value("INTEGER8",   PWNER::data_type_t::INTEGER8)
+            .value("INTEGER16",  PWNER::data_type_t::INTEGER16)
+            .value("INTEGER32",  PWNER::data_type_t::INTEGER32)
+            .value("INTEGER64",  PWNER::data_type_t::INTEGER64)
+            .value("FLOAT32",    PWNER::data_type_t::FLOAT32)
+            .value("FLOAT64",    PWNER::data_type_t::FLOAT64)
+            .value("BYTEARRAY",  PWNER::data_type_t::BYTEARRAY)
+            .value("STRING",     PWNER::data_type_t::STRING)
+            ;
 
-    // pwner/process/Process.hh
-    // py::class_<PWNER::PROCESS::Process, PWNER::PROCESS::IO>(m, "Process")
+    py::enum_<PWNER::match_type_t>(m, "match_type_t", py::arithmetic())
+            .value("MATCHANY",         PWNER::match_type_t::MATCHANY)
+            .value("MATCHEQUALTO",     PWNER::match_type_t::MATCHEQUALTO)
+            .value("MATCHNOTEQUALTO",  PWNER::match_type_t::MATCHNOTEQUALTO)
+            .value("MATCHGREATERTHAN", PWNER::match_type_t::MATCHGREATERTHAN)
+            .value("MATCHLESSTHAN",    PWNER::match_type_t::MATCHLESSTHAN)
+            .value("MATCHRANGE",       PWNER::match_type_t::MATCHRANGE)
+            .value("MATCHEXCLUDE",     PWNER::match_type_t::MATCHEXCLUDE)
+            .value("MATCHUPDATE",      PWNER::match_type_t::MATCHUPDATE)
+            .value("MATCHNOTCHANGED",  PWNER::match_type_t::MATCHNOTCHANGED)
+            .value("MATCHCHANGED",     PWNER::match_type_t::MATCHCHANGED)
+            .value("MATCHINCREASED",   PWNER::match_type_t::MATCHINCREASED)
+            .value("MATCHDECREASED",   PWNER::match_type_t::MATCHDECREASED)
+            .value("MATCHINCREASEDBY", PWNER::match_type_t::MATCHINCREASEDBY)
+            .value("MATCHDECREASEDBY", PWNER::match_type_t::MATCHDECREASEDBY)
+            ;
+
+    py::enum_<PWNER::flag_t>(m, "flag_t", py::arithmetic())
+            .value("flags_empty",   PWNER::flag_t::flags_empty)
+            .value("flag_u8",       PWNER::flag_t::flag_u8)
+            .value("flag_i8",       PWNER::flag_t::flag_i8)
+            .value("flag_u16",      PWNER::flag_t::flag_u16)
+            .value("flag_i16",      PWNER::flag_t::flag_i16)
+            .value("flag_u32",      PWNER::flag_t::flag_u32)
+            .value("flag_i32",      PWNER::flag_t::flag_i32)
+            .value("flag_u64",      PWNER::flag_t::flag_u64)
+            .value("flag_i64",      PWNER::flag_t::flag_i64)
+            .value("flag_f32",      PWNER::flag_t::flag_f32)
+            .value("flag_f64",      PWNER::flag_t::flag_f64)
+            .value("flags_i8b",     PWNER::flag_t::flags_i8b)
+            .value("flags_i16b",    PWNER::flag_t::flags_i16b)
+            .value("flags_i32b",    PWNER::flag_t::flags_i32b)
+            .value("flags_i64b",    PWNER::flag_t::flags_i64b)
+            .value("flags_integer", PWNER::flag_t::flags_integer)
+            .value("flags_float",   PWNER::flag_t::flags_float)
+            .value("flags_all",     PWNER::flag_t::flags_all)
+            .value("flags_8b",      PWNER::flag_t::flags_8b)
+            .value("flags_16b",     PWNER::flag_t::flags_16b)
+            .value("flags_32b",     PWNER::flag_t::flags_32b)
+            .value("flags_64b",     PWNER::flag_t::flags_64b)
+            ;
+
+    py::class_<bitmask::bitmask<PWNER::flag_t>>(m, "bitmask0flag_t")
+            .def(py::init<>())
+            .def(py::init<PWNER::flag_t>())
+            ;
+
+    py::class_<PWNER::flag, bitmask::bitmask<PWNER::flag_t>>(m, "flag")
+            .def(py::init<const PWNER::data_type_t&>())
+            // static methods
+            .def_static("convert",   static_cast<PWNER::flag (*)(const PWNER::data_type_t&)>(&PWNER::flag::convert), py::arg("dt"))
+            // methods
+            .def("memlength", static_cast<size_t (PWNER::flag::*)(const PWNER::data_type_t&) const>(&PWNER::flag::memlength), py::arg("scan_data_type"))
+            .def("str",       static_cast<std::string (PWNER::flag::*)() const>(&PWNER::flag::str))
+            ;
+
+    // py::class_<PWNER::mem64_t> (m, "mem64")
     //         .def(py::init<>())
-    //         .def("get_call_address", &PWNER::PROCESS::Process::get_call_address)
-    //         .def("get_absolute_address", &PWNER::PROCESS::Process::get_absolute_address)
-    //         ;
-    //
-    // py::class_<PWNER::PROCESS::ProcessProcfs, PWNER::PROCESS::Process, PWNER::PROCESS::IOProcfs>(m, "ProcessProcfs")
-    //         .def(py::init<pid_t>())
-    //         .def(py::init<const std::regex&>())
-    //         ;
-    //
-    // py::class_<PWNER::PROCESS::ProcessHeap, PWNER::PROCESS::Process, PWNER::PROCESS::IOMappedHeap>(m, "ProcessHeap")
-    //         .def(py::init<PWNER::PROCESS::IO&>())
-    //         ;
-
-
-
-    // py::class_<PWNER::Handle>(m, "Handle")
-    //         .def(py::init<>())
-    //         .def(py::init<pid_t>())
-    //         .def(py::init<const std::string &>())
-    //         .def_readwrite("pid", &PWNER::Handle::pid)
-    //         .def_readwrite("title", &PWNER::Handle::title)
-    //         .def_readwrite("regions_ignored", &PWNER::Handle::regions_ignored)
-    //         .def_readwrite("regions", &PWNER::Handle::regions)
-    //         .def("attach", (void (PWNER::Handle::*)(pid_t)) &PWNER::Handle::attach, "Attach by PID")
-    //         .def("attach", (void (PWNER::Handle::*)(const std::string &)) &PWNER::Handle::attach, "Attach by title")
-    //         .def("get_path", &PWNER::Handle::get_path, "Get executable path")
-    //         .def("get_working_directory", &PWNER::Handle::get_working_directory, "Get executable working directory")
-    //         .def("is_valid", &PWNER::Handle::is_valid, "Is handle valid")
-    //         .def("is_running", &PWNER::Handle::is_running, "Is handle running")
-    //         .def("is_good", &PWNER::Handle::is_running, "Is handle valid and running")
-    //         .def("read", [](PWNER::Handle& self, uintptr_t& address, uintptr_t& out, size_t& size) -> auto {
-    //             return self.read(address, reinterpret_cast<void *>(out), size);
-    //         }, "Read from handle", py::arg("address"), py::arg("out"), py::arg("size"))
-    //         .def("read", [](PWNER::Handle& self, uintptr_t& address, size_t& size) -> auto {
-    //             // fixme[critical]: !! memory leak !!
-    //             uint8_t *b = new uint8_t[size];
-    //             size_t s = self.read(address, b, size);
-    //             if (s == PWNER::Handle::npos)
-    //                 s = 0;
-    //             return py::bytes(reinterpret_cast<char *>(b), s);
-    //         }, "Read from handle", py::arg("address"), py::arg("size"))
-    //         .def("write", &PWNER::Handle::write, "Write to handle", py::arg("address"), py::arg("in"), py::arg("size"))
-    //         .def("read_cached", &PWNER::Handle::read_cached, "Read from handle", py::arg("address"), py::arg("out"), py::arg("size"))
-    //         .def("update_regions", &PWNER::Handle::update_regions, "Update maps")
-    //         .def("get_region_by_name", &PWNER::Handle::get_region_by_name)
-    //         .def("get_region_of_address", &PWNER::Handle::get_region_of_address)
-    //         .def("find_pattern", &PWNER::Handle::find_pattern)
-    //         .def("get_call_address", &PWNER::Handle::get_call_address)
-    //         .def("get_absolute_address", &PWNER::Handle::get_absolute_address)
-    //         ;
-//*/
-
-    // RE/value.hh
-    // todo[high] add other classes
-    // pybind11::class_<PWNER::mem64_t> (m, "mem64_t")
-    //         .def(pybind11::init<>())
     //         .def_property("i8",  [](PWNER::mem64_t& self) -> auto { return self.i8;  }, [](PWNER::mem64_t& self, typeof(self.i8 ) set) { self.i8  = set; })
     //         .def_property("u8",  [](PWNER::mem64_t& self) -> auto { return self.u8;  }, [](PWNER::mem64_t& self, typeof(self.u8 ) set) { self.u8  = set; })
     //         .def_property("i16", [](PWNER::mem64_t& self) -> auto { return self.i16; }, [](PWNER::mem64_t& self, typeof(self.i16) set) { self.i16 = set; })
@@ -254,5 +267,85 @@ PYBIND11_MODULE(pwner, m) {
     //         .def("_address_", [](PWNER::mem64_t& self) -> uintptr_t { return reinterpret_cast<uintptr_t>(&self); }, "the base object")
     //         ;
 
-    //todo[high] add other RE's headers
+    py::class_<PWNER::value_t> (m, "value_t")
+            .def(py::init<>())
+            .def(py::init<uintptr_t, PWNER::mem64_t, PWNER::flag>())
+            .def_readwrite("address", &PWNER::value_t::address)
+            .def_readwrite("mem", &PWNER::value_t::mem)
+            .def_readwrite("flags", &PWNER::value_t::flags)
+            .def("nearest_flag", &PWNER::value_t::nearest_flag)
+            .def("flag2str", &PWNER::value_t::flag2str)
+            .def("val2str", &PWNER::value_t::val2str)
+            .def("address2str", &PWNER::value_t::address2str)
+            .def("str", &PWNER::value_t::str)
+            ;
+
+    py::class_<PWNER::Cuservalue> (m, "Cuservalue")
+            .def(py::init<>())
+            .def_readwrite("i8", &PWNER::Cuservalue::i8)
+            .def_readwrite("u8", &PWNER::Cuservalue::u8)
+            .def_readwrite("i16", &PWNER::Cuservalue::i16)
+            .def_readwrite("u16", &PWNER::Cuservalue::u16)
+            .def_readwrite("i32", &PWNER::Cuservalue::i32)
+            .def_readwrite("u32", &PWNER::Cuservalue::u32)
+            .def_readwrite("i64", &PWNER::Cuservalue::i64)
+            .def_readwrite("u64", &PWNER::Cuservalue::u64)
+            .def_readwrite("f32", &PWNER::Cuservalue::f32)
+            .def_readwrite("f64", &PWNER::Cuservalue::f64)
+            .def_readwrite("bytearray_value", &PWNER::Cuservalue::bytearray_value)
+            .def_readwrite("wildcard_value", &PWNER::Cuservalue::wildcard_value)
+            .def_readwrite("string_value", &PWNER::Cuservalue::string_value)
+            .def_readwrite("flags", &PWNER::Cuservalue::flags)
+            .def("parse_uservalue_int", &PWNER::Cuservalue::parse_uservalue_int, py::arg("text"))
+            .def("parse_uservalue_float", &PWNER::Cuservalue::parse_uservalue_float, py::arg("text"))
+            .def("parse_uservalue_number", &PWNER::Cuservalue::parse_uservalue_number, py::arg("text"))
+            .def("parse_uservalue_bytearray", &PWNER::Cuservalue::parse_uservalue_bytearray, py::arg("text"))
+            .def("parse_uservalue_string", &PWNER::Cuservalue::parse_uservalue_string, py::arg("text"))
+            ;
+
+    m.def("string_to_uservalue", [](const PWNER::data_type_t &data_type,
+                                    const std::string &text) {
+        PWNER::match_type_t match_type;
+        std::vector<PWNER::Cuservalue> uservalue;
+        PWNER::string_to_uservalue(data_type, text, match_type, uservalue);
+        return std::make_tuple(match_type, uservalue);
+    }, py::arg("dt"), py::arg("text"));
+
+    // pwner/scanner/ValueScanner.hh
+    // TODO: pwner/scanner/ValueScanner.hh
+    py::bind_vector<std::vector<PWNER::value_t>>(m, "VectorValues", py::module_local(false));
+
+    py::class_<PWNER::ScannerSequential>(m, "ScannerSequential")
+            .def(py::init<PWNER::PROCESS::Process&>())
+            .def("scan_regions", [](PWNER::ScannerSequential& self,
+                                    std::vector<PWNER::value_t>& writing_matches,
+                                    const PWNER::data_type_t& data_type,
+                                    const std::vector<PWNER::Cuservalue> uservalue,
+                                    const PWNER::match_type_t& match_type) {
+                return self.scan_regions(writing_matches,data_type,uservalue.data(),match_type);
+            }, py::arg("writing_matches"), py::arg("data_type"), py::arg("uservalue"), py::arg("match_type"))
+            .def("scan_recheck", [](PWNER::ScannerSequential& self,
+                                    std::vector<PWNER::value_t>& writing_matches,
+                                    const PWNER::data_type_t& data_type,
+                                    const std::vector<PWNER::Cuservalue> uservalue,
+                                    const PWNER::match_type_t& match_type) {
+                return self.scan_recheck(writing_matches,data_type,uservalue.data(),match_type);
+            }, py::arg("writing_matches"), py::arg("data_type"), py::arg("uservalue"), py::arg("match_type"))
+            .def("scan_update",  &PWNER::ScannerSequential::scan_update, py::arg("writing_matches"))
+            // .def_readonly("handler", &PWNER::ScannerSequential::handler)
+            .def_readwrite("stop_flag", &PWNER::ScannerSequential::stop_flag)
+            .def_readwrite("scan_progress", &PWNER::ScannerSequential::scan_progress)
+            .def_readwrite("step", &PWNER::ScannerSequential::step)
+            ;
+
+    // TODO: pwner/scanner/PointerScanner.hh
+    // py::class_<PWNER::PointerScannerBackward>(m, "PointerScannerBackward")
+    //         .def(py::init<PWNER::PROCESS::Process&>())
+    //         .def("scan_regions", &PWNER::ScannerSequential::scan_regions)
+    //         .def("scan_update",  &PWNER::ScannerSequential::scan_update)
+    //         .def("scan_recheck", &PWNER::ScannerSequential::scan_recheck)
+    //         .def_readwrite("stop_flag", &PWNER::ScannerSequential::stop_flag)
+    //         .def_readwrite("scan_progress", &PWNER::ScannerSequential::scan_progress)
+    //         .def_readwrite("step", &PWNER::ScannerSequential::step)
+    //         ;
 }

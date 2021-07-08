@@ -22,7 +22,7 @@
 
 #include <pwner/bin/standart/ELF.hh>
 
-using namespace PWNER::BIN::STANDART;
+using namespace pwner::BIN::STANDART;
 
 std::vector<section_t> ELF::get_sections() {
     Elf64_Ehdr *ehdr = (Elf64_Ehdr*)m_mmap;
