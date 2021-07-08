@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ValueScanner</class>
+ <widget class="QDockWidget" name="ValueScanner">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>845</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="styleSheet">
+   <string notr="true"/>
+  </property>
+  <property name="windowTitle">
+   <string notr="true">ValueScanner</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents">
+   <layout class="QVBoxLayout" name="verticalLayout" stretch="0">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <widget class="QLabel" name="lblValues">
+          <property name="text">
+           <string>Values: 0</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTreeView" name="treeValues"/>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_2">
+          <item>
+           <widget class="QComboBox" name="comboRecent"/>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnScan">
+            <property name="text">
+             <string>Scan</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="btnReset">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>Reset</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="lineValue">
+          <property name="placeholderText">
+           <string>Value to scan</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_3">
+          <item>
+           <widget class="QComboBox" name="comboScanType">
+            <item>
+             <property name="text">
+              <string>Exact value</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Greater than...</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Less than...</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>In the range between...</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Not in the range between...</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Unknown initial value</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item>
+           <widget class="QComboBox" name="comboValueType">
+            <property name="currentIndex">
+             <number>2</number>
+            </property>
+            <item>
+             <property name="text">
+              <string>bytearray</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>string</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>number</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">int</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">int8</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">int16</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">int32</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">int64</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">float</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">float32</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string notr="true">float64</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="horizontalLayout_4">
+          <item>
+           <widget class="QLabel" name="lblStep">
+            <property name="text">
+             <string>Alignment:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSpinBox" name="spinStep">
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>8</number>
+            </property>
+            <property name="value">
+             <number>4</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <widget class="QPushButton" name="btnRegions">
+          <property name="text">
+           <string>Regions to scan...</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="verticalSpacer">
+          <property name="orientation">
+           <enum>Qt::Vertical</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>40</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>btnRegions</sender>
+   <signal>clicked()</signal>
+   <receiver>ValueScanner</receiver>
+   <slot>onActionRegions()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnReset</sender>
+   <signal>clicked()</signal>
+   <receiver>ValueScanner</receiver>
+   <slot>onActionReset()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>btnScan</sender>
+   <signal>clicked()</signal>
+   <receiver>ValueScanner</receiver>
+   <slot>onActionScan()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>lineValue</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>ValueScanner</receiver>
+   <slot>onUservalueChange()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>-1</x>
+     <y>-1</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>20</x>
+     <y>20</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onActionRegions()</slot>
+  <slot>onActionReset()</slot>
+  <slot>onActionScan()</slot>
+  <slot>onUservalueChange()</slot>
+ </slots>
+</ui>

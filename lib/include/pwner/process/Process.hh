@@ -72,7 +72,7 @@ public:
     explicit ProcessProcfs(pid_t pid)
     : IOProcfs(pid) { }
 
-    explicit ProcessProcfs(const std::regex& regex_pattern_cmdline)
+    explicit ProcessProcfs(const std::string& regex_pattern_cmdline)
     : IOProcfs(regex_pattern_cmdline) { }
 };
 

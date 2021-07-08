@@ -22,7 +22,7 @@ int main(int argc, const char *argv[]) {
     // std::string target = "PwnAdventure3-Linux-Shipping";
     std::string target = "FAKEMEM";
 
-    PWNER::PROCESS::ProcessProcfs handler((std::regex(target)));
+    PWNER::PROCESS::ProcessProcfs handler(target);
     if (!handler)
         throw std::invalid_argument("Cannot find "+target+" process. Nothing to do.");
 

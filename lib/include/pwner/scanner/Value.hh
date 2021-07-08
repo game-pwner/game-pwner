@@ -403,7 +403,7 @@ public:
 
 void string_to_uservalue(const PWNER::Edata_type &data_type,
                          const std::string &text,
-                         PWNER::Ematch_type *match_type,
-                         PWNER::Cuservalue *uservalue);
+                         PWNER::Ematch_type& match_type,
+                         std::vector<PWNER::Cuservalue>& uservalue);
 
 NAMESPACE_END(PWNER)
